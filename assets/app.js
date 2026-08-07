@@ -15,6 +15,18 @@
     { v: 5, emo: '🔥', lb: 'Storica' }
   ];
 
+  // Tipo di bestemmia: più è fantasiosa, più punti bonus vale.
+  var TYPES = [
+    { v: 'classica', emo: '🗿', lb: 'Classica', bonus: 0, desc: 'Il grande classico, senza sforzo' },
+    { v: 'creativa', emo: '🎨', lb: 'Creativa', bonus: 2, desc: 'Accostamento mai sentito prima' },
+    { v: 'composta', emo: '🧱', lb: 'Composta', bonus: 3, desc: 'Costruzione lunga e articolata' },
+    { v: 'dialetto', emo: '🪗', lb: 'Dialetto', bonus: 2, desc: 'Sapore locale certificato' },
+    { v: 'straniera', emo: '🌍', lb: 'Straniera', bonus: 2, desc: 'Internazionale, con accento' },
+    { v: 'autogol', emo: '🙈', lb: 'Autogol', bonus: 1, desc: 'Involontaria, ma memorabile' }
+  ];
+
+  var BONUS_LABELS = ['Niente', 'Carina', 'Notevole', 'Capolavoro'];
+
   var COLORS = ['#ff4d3d', '#ffb020', '#35d07f', '#4aa8ff', '#b07cff', '#ff6fae', '#3ad0c8', '#e0e4ec'];
 
   /* ---------------- utilità ---------------- */
@@ -73,6 +85,27 @@
     return SEVERITIES.filter(function (s) { return s.v === Number(v); })[0] || SEVERITIES[1];
   }
 
+  function typeOf(v) {
+    return TYPES.filter(function (t) { return t.v === v; })[0] || TYPES[0];
+  }
+
+  // Punti bonus: quelli del tipo più due per ogni stella di fantasia assegnata.
+  function bonusPoints(c) {
+    return typeOf(c.type).bonus + (Number(c.bonus) || 0) * 2;
+  }
+
+  // Punteggio totale: la gravità pesa, ma la fantasia paga di più.
+  function points(c) {
+    return (Number(c.severity) || 1) + bonusPoints(c);
+  }
+
+  function isBonus(c) { return bonusPoints(c) > 0; }
+
+  function stars(n) {
+    n = Number(n) || 0;
+    return n ? new Array(n + 1).join('⭐') : '';
+  }
+
   /* ---------------- selettori dati ---------------- */
 
   function travelers() {
@@ -118,9 +151,27 @@
     var map = countsBy(list);
     return travelers().map(function (t) {
       var mine = list.filter(function (c) { return c.travelerId === t.id; });
-      var severity = mine.reduce(function (a, c) { return a + (Number(c.severity) || 1); }, 0);
-      return { traveler: t, count: map[t.id] || 0, severity: severity };
-    }).sort(function (a, b) { return b.count - a.count || b.severity - a.severity; });
+      return {
+        traveler: t,
+        count: map[t.id] || 0,
+        points: mine.reduce(function (a, c) { return a + points(c); }, 0),
+        fantasy: mine.reduce(function (a, c) { return a + bonusPoints(c); }, 0),
+        bonusCount: mine.filter(isBonus).length
+      };
+    }).sort(function (a, b) { return b.count - a.count || b.points - a.points; });
+  }
+
+  // Classifica della fantasia: conta solo quello che le bestemmie bonus hanno fruttato.
+  function fantasyRanking(list) {
+    return ranking(list)
+      .filter(function (r) { return r.fantasy > 0; })
+      .sort(function (a, b) { return b.fantasy - a.fantasy || b.bonusCount - a.bonusCount; });
+  }
+
+  function bestBonus(list, limit) {
+    return list.filter(isBonus)
+      .sort(function (a, b) { return bonusPoints(b) - bonusPoints(a) || b.at - a.at; })
+      .slice(0, limit || 5);
   }
 
   /* ---------------- router ---------------- */
@@ -197,6 +248,12 @@
     out += '<div class="hero-label">Bestemmie di oggi</div>';
     out += '<div class="hero-count">' + today.length + '</div>';
     out += '<div class="hero-sub">' + (stage ? esc(stage.title) : 'Nessuna tappa attiva') + '</div>';
+    var bonusToday = today.filter(isBonus);
+    if (today.length) {
+      out += '<div class="hero-sub" style="margin-top:6px">' + today.reduce(function (a, c) { return a + points(c); }, 0) + ' punti';
+      out += bonusToday.length ? ' · <span style="color:var(--accent-2)">' + bonusToday.length + ' bonus fantasia ⭐</span>' : ' · nessuna bonus, che tristezza';
+      out += '</div>';
+    }
     out += '<div class="hero-stats">';
     out += '<div><b>' + stageList.length + '</b><span>Tappa</span></div>';
     out += '<div><b>' + total + '</b><span>Viaggio</span></div>';
@@ -257,12 +314,18 @@
   function curseRow(c) {
     var t = Store.find('travelers', c.travelerId);
     var s = severityOf(c.severity);
+    var ty = typeOf(c.type);
     var stage = c.stageId ? Store.find('stages', c.stageId) : null;
     var out = '<div class="list-item timeline-item">';
     out += avatar(t, 'sm');
     out += '<div class="body">';
     out += '<div class="meta"><strong style="color:var(--text)">' + esc(t ? t.name : 'Sconosciuto') + '</strong> · ' + s.emo + ' ' + esc(s.lb) + ' · ' + fmtTime(c.at) + (stage ? ' · ' + esc(stage.title) : '') + '</div>';
     if (c.text) out += '<p>' + esc(c.text) + '</p>';
+    if (isBonus(c)) {
+      out += '<div style="margin-top:6px"><span class="badge hot">' + ty.emo + ' ' + esc(ty.lb) + ' · +' + bonusPoints(c) + ' pt</span>';
+      if (Number(c.bonus)) out += ' <span class="badge">' + stars(c.bonus) + ' ' + esc(BONUS_LABELS[c.bonus]) + '</span>';
+      out += '</div>';
+    }
     out += '</div>';
     out += '<button class="icon-btn" data-action="delete-curse" data-id="' + esc(c.id) + '" aria-label="Elimina">✕</button>';
     out += '</div>';
@@ -369,18 +432,65 @@
         out += avatar(r.traveler, 'sm');
         out += '<div class="grow"><strong>' + esc(r.traveler.name) + '</strong>';
         out += '<div class="bar"><i style="width:' + (max ? Math.round(r.count / max * 100) : 0) + '%;background:' + esc(r.traveler.color || '#ff4d3d') + '"></i></div></div>';
-        out += '<div class="trail"><b style="font-size:19px;color:var(--text)">' + r.count + '</b><br>' + r.severity + ' pt</div>';
+        out += '<div class="trail"><b style="font-size:19px;color:var(--text)">' + r.count + '</b><br>' + r.points + ' pt</div>';
         out += '</a>';
       });
       out += '</div>';
     }
     out += '</div>';
 
+    var fantasy = fantasyRanking(list);
+    out += '<div class="section"><div class="section-title">Classifica fantasia <span class="muted">solo bonus</span></div>';
+    if (!fantasy.length) {
+      out += '<div class="empty">Nessuna bestemmia bonus. Finora solo roba da manuale.</div>';
+    } else {
+      var maxF = fantasy[0].fantasy;
+      out += '<div class="list">';
+      fantasy.forEach(function (r, i) {
+        var medal = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+        out += '<a class="list-item" href="#/persona/' + esc(r.traveler.id) + '">';
+        out += '<div class="rank ' + medal + '">' + (i + 1) + '</div>';
+        out += avatar(r.traveler, 'sm');
+        out += '<div class="grow"><strong>' + esc(r.traveler.name) + '</strong>';
+        out += '<div class="bar"><i style="width:' + Math.round(r.fantasy / maxF * 100) + '%;background:var(--accent-2)"></i></div></div>';
+        out += '<div class="trail"><b style="font-size:19px;color:var(--accent-2)">' + r.fantasy + '</b><br>' + r.bonusCount + ' bonus</div>';
+        out += '</a>';
+      });
+      out += '</div>';
+    }
+    out += '</div>';
+
+    var bonuses = bestBonus(list, 5);
+    if (bonuses.length) {
+      out += '<div class="section"><div class="section-title">Le bestemmie bonus</div><div class="list">';
+      bonuses.forEach(function (c) {
+        var bt = Store.find('travelers', c.travelerId);
+        var ty = typeOf(c.type);
+        out += '<div class="quote">';
+        out += '<p>' + (c.text ? '“' + esc(c.text) + '”' : ty.emo + ' ' + esc(ty.desc)) + '</p>';
+        out += '<footer><span>— ' + esc(bt ? bt.name : 'Ignoto') + ' · ' + ty.emo + ' ' + esc(ty.lb) + ' ' + stars(c.bonus) + '</span>';
+        out += '<span class="badge hot">+' + bonusPoints(c) + ' pt</span></footer>';
+        out += '</div>';
+      });
+      out += '</div></div>';
+    }
+
+    var byType = TYPES.map(function (ty) {
+      return { ty: ty, n: list.filter(function (c) { return typeOf(c.type).v === ty.v; }).length };
+    }).filter(function (x) { return x.n; }).sort(function (a, b) { return b.n - a.n; });
+    if (byType.length > 1) {
+      out += '<div class="section"><div class="section-title">Per tipo</div><div class="card">';
+      byType.forEach(function (x) { out += statRow(x.ty.emo + '  ' + x.ty.lb, x.n); });
+      out += '</div></div>';
+    }
+
     out += '<div class="section"><div class="section-title">Albo d\'oro</div>';
     out += '<div class="card">';
     var worstDay = bestDay(list);
     var hardest = list.slice().sort(function (a, b) { return (b.severity || 0) - (a.severity || 0) || b.at - a.at; })[0];
     out += statRow('Totale nel periodo', list.length);
+    out += statRow('Punti totali', list.reduce(function (a, c) { return a + points(c); }, 0));
+    out += statRow('Bestemmie bonus', list.filter(isBonus).length);
     out += statRow('Gravità media', list.length ? (list.reduce(function (a, c) { return a + (Number(c.severity) || 1); }, 0) / list.length).toFixed(1) : '—');
     out += statRow('Giornata peggiore', worstDay ? fmtDate(worstDay.ts) + ' (' + worstDay.n + ')' : '—');
     if (hardest) {
@@ -455,14 +565,28 @@
     if (t.nickname) out += '<div class="muted">detto “' + esc(t.nickname) + '”</div>';
     if (t.role) out += '<div class="badge" style="margin-top:8px">' + esc(t.role) + '</div>';
     if (t.bio) out += '<p style="margin:12px 0 0;font-size:14px">' + esc(t.bio) + '</p>';
+    var myFantasy = mine.reduce(function (a, c) { return a + bonusPoints(c); }, 0);
     out += '<div class="hero-stats" style="margin-top:16px">';
     out += '<div><b>' + mine.length + '</b><span>Totali</span></div>';
-    out += '<div><b>' + (mine.length / dayCount).toFixed(1) + '</b><span>Al giorno</span></div>';
-    out += '<div><b>' + (pos || '—') + '°</b><span>In classifica</span></div>';
+    out += '<div><b>' + mine.reduce(function (a, c) { return a + points(c); }, 0) + '</b><span>Punti</span></div>';
+    out += '<div><b style="color:var(--accent-2)">' + myFantasy + '</b><span>Fantasia</span></div>';
+    out += '<div><b>' + (pos || '—') + '°</b><span>Classifica</span></div>';
     out += '</div>';
+    out += '<div class="muted" style="font-size:12px;margin-top:8px">' + (mine.length / dayCount).toFixed(1) + ' al giorno su ' + dayCount + (dayCount === 1 ? ' giorno' : ' giorni') + '</div>';
     out += '<div class="btn-row"><button class="btn primary" data-action="quick-add" data-id="' + esc(t.id) + '">+ Bestemmia</button>';
     out += '<button class="btn ghost" data-action="add-quote" data-id="' + esc(t.id) + '">💬 Frase</button></div>';
     out += '</div></div>';
+
+    var myBonus = bestBonus(mine, 3);
+    if (myBonus.length) {
+      out += '<div class="section"><div class="section-title">Le sue bonus</div><div class="list">';
+      myBonus.forEach(function (c) {
+        var ty = typeOf(c.type);
+        out += '<div class="quote"><p>' + (c.text ? '“' + esc(c.text) + '”' : ty.emo + ' ' + esc(ty.desc)) + '</p>';
+        out += '<footer><span>' + ty.emo + ' ' + esc(ty.lb) + ' ' + stars(c.bonus) + ' · ' + fmtDate(c.at) + '</span><span class="badge hot">+' + bonusPoints(c) + ' pt</span></footer></div>';
+      });
+      out += '</div></div>';
+    }
 
     out += '<div class="section"><div class="section-title">Le sue frasi celebri</div>';
     out += myQuotes.length ? '<div class="list">' + myQuotes.map(quoteRow).join('') + '</div>'
@@ -608,23 +732,59 @@
       out += '<button type="button" data-sev="' + s.v + '"' + (s.v === 2 ? ' class="active"' : '') + '><span class="emo">' + s.emo + '</span><span class="lb">' + s.lb + '</span></button>';
     });
     out += '</div></div>';
+
+    out += '<div class="field"><label>Tipo di bestemmia</label><div class="types" id="typePicker">';
+    TYPES.forEach(function (ty) {
+      out += '<button type="button"' + (ty.v === 'classica' ? ' class="active"' : '') + ' data-type="' + ty.v + '">';
+      out += '<span class="emo">' + ty.emo + '</span><span class="lb">' + esc(ty.lb) + (ty.bonus ? ' <span class="bn">+' + ty.bonus + '</span>' : '') + '</span></button>';
+    });
+    out += '</div><div class="hint" id="typeHint">' + esc(TYPES[0].desc) + '</div></div>';
+
+    out += '<div class="field"><label>Bonus fantasia</label><div class="severity" id="bonusPicker">';
+    [0, 1, 2, 3].forEach(function (n) {
+      out += '<button type="button" data-bonus="' + n + '"' + (n === 0 ? ' class="active"' : '') + '>';
+      out += '<span class="emo">' + (n ? stars(n) : '—') + '</span><span class="lb">' + esc(BONUS_LABELS[n]) + '</span></button>';
+    });
+    out += '</div><div class="hint">Ogni stella vale 2 punti in più: la fantasia conta più della gravità.</div></div>';
+
     out += '<div class="field"><label>Cosa è successo (facoltativo)</label><input type="text" id="curseText" placeholder="Es. rotonda sbagliata a Foggia"></div>';
     out += '<button class="btn primary" data-action="save-curse" data-id="' + esc(t.id) + '">Registra</button>';
-    out += '<div class="btn-row"><button class="btn ghost" data-action="save-curse-x5" data-id="' + esc(t.id) + '">Raffica: +5</button></div>';
+    out += '<div class="btn-row"><button class="btn ghost" data-action="save-curse-x5" data-id="' + esc(t.id) + '">Raffica: +5 classiche</button></div>';
     openSheet(out);
 
-    var picker = document.getElementById('sevPicker');
+    pickerBehaviour('sevPicker', 'data-sev');
+    pickerBehaviour('bonusPicker', 'data-bonus');
+    pickerBehaviour('typePicker', 'data-type', function (btn) {
+      document.getElementById('typeHint').textContent = typeOf(btn.getAttribute('data-type')).desc;
+    });
+  }
+
+  // Selettore a scelta singola: un solo figlio resta "active".
+  function pickerBehaviour(id, attr, onPick) {
+    var picker = document.getElementById(id);
+    if (!picker) return;
     picker.addEventListener('click', function (e) {
-      var btn = e.target.closest('button[data-sev]');
+      var btn = e.target.closest('button[' + attr + ']');
       if (!btn) return;
       Array.prototype.forEach.call(picker.children, function (b) { b.classList.remove('active'); });
       btn.classList.add('active');
+      if (onPick) onPick(btn);
     });
   }
 
   function selectedSeverity() {
     var active = document.querySelector('#sevPicker button.active');
     return active ? Number(active.getAttribute('data-sev')) : 2;
+  }
+
+  function selectedType() {
+    var active = document.querySelector('#typePicker button.active');
+    return active ? active.getAttribute('data-type') : 'classica';
+  }
+
+  function selectedBonus() {
+    var active = document.querySelector('#bonusPicker button.active');
+    return active ? Number(active.getAttribute('data-bonus')) : 0;
   }
 
   function sheetQuote(travelerId) {
@@ -982,19 +1142,27 @@
     var sev = selectedSeverity();
     var textEl = document.getElementById('curseText');
     var text = textEl ? textEl.value.trim() : '';
+    // Una raffica è quantità, non qualità: niente tipo esotico né bonus.
+    var raffica = times > 1;
+    var type = raffica ? 'classica' : selectedType();
+    var bonus = raffica ? 0 : selectedBonus();
     var stage = currentStage();
     for (var i = 0; i < times; i++) {
       Store.insert('curses', {
         travelerId: travelerId,
         stageId: stage ? stage.id : null,
         severity: sev,
+        type: type,
+        bonus: bonus,
         text: i === 0 ? text : '',
         at: Date.now() + i
       });
     }
     closeSheet();
     var t = Store.find('travelers', travelerId);
-    toast((t ? t.name : 'Registrato') + ': +' + times + ' ' + severityOf(sev).emo);
+    var gained = points({ severity: sev, type: type, bonus: bonus }) * times;
+    var extra = bonusPoints({ type: type, bonus: bonus });
+    toast((t ? t.name : 'Registrato') + ': +' + times + ' ' + severityOf(sev).emo + ' · ' + gained + ' pt' + (extra ? ' ' + typeOf(type).emo + ' bonus!' : ''));
     scheduleSync();
   }
 

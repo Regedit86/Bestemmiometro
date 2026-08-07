@@ -5,8 +5,11 @@ ogni frase celebre che verrà ricordata per sempre.
 
 - **Admin** per configurare viaggiatori (foto, soprannome, ruolo, descrizione) e tappe
 - **Inserimento manuale** con un tocco sulla faccia del colpevole, gravità da 😐 a 🔥
+- **Bestemmia bonus**: tipo (creativa, composta, in dialetto, straniera, autogol) e
+  stelle di fantasia, perché la creatività vale più della quantità
 - **Frasi celebri** del giorno, per persona
 - **Classifica** per tappa, per giornata e per tutto il viaggio, con albo d'oro
+  e una **classifica fantasia** dedicata alle bonus
 - **Promemoria serale** per non dimenticare di segnare i danni
 - **Condivisione** con gli amici: tutti vedono lo stesso conteggio
 - Funziona **offline** in auto e sincronizza appena torna il segnale
@@ -57,6 +60,30 @@ Nella tab **Admin**:
 - Tab **Oggi**: tocchi la faccia di chi ha bestemmiato, scegli la gravità, aggiungi
   facoltativamente cosa è successo, **Registra**. Se è stata una raffica, c'è **+5**.
 - **💬 Frase celebre**: per salvare la perla del giorno, attribuita alla persona giusta.
+
+### La bestemmia bonus
+
+Contare e basta premia chi urla di più, non chi è più bravo. Per questo ogni
+registrazione ha due campi in più:
+
+| Tipo | Bonus |
+|---|---|
+| 🗿 Classica — il grande classico, senza sforzo | +0 |
+| 🎨 Creativa — accostamento mai sentito prima | +2 |
+| 🧱 Composta — costruzione lunga e articolata | +3 |
+| 🪗 Dialetto — sapore locale certificato | +2 |
+| 🌍 Straniera — internazionale, con accento | +2 |
+| 🙈 Autogol — involontaria, ma memorabile | +1 |
+
+Sopra al tipo c'è il **bonus fantasia**: da zero a tre stelle assegnate dal gruppo,
+**2 punti l'una**. Il punteggio finale di una bestemmia è quindi
+`gravità + bonus del tipo + 2 × stelle`: una 🧱 composta da tre stelle vale più di
+cinque bestemmie classiche urlate in fila. La **raffica +5** resta volutamente esclusa
+dai bonus — è quantità, non qualità.
+
+Le bonus finiscono nella **classifica fantasia** (che ignora i numeri e conta solo la
+creatività), nell'**albo delle bestemmie bonus** con le migliori del periodo, nel
+riepilogo **per tipo** e nella scheda personale di ognuno.
 - Tab **Tappe**: conteggio per ogni tratta e riepilogo del viaggio.
 - Tab **Classifica**: podio per tutto il viaggio / tappa corrente / oggi, gravità media,
   giornata peggiore e bestemmia record.

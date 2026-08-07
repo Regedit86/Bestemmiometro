@@ -307,6 +307,18 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .severity button.active { border-color: var(--accent); background: rgba(255,77,61,.12); }
 .severity button.active .lb { color: var(--text); }
 
+/* ---------- Selettore tipo bestemmia ---------- */
+.types { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.types button {
+  border: 1px solid var(--line); background: var(--bg); border-radius: 12px;
+  padding: 10px 4px; cursor: pointer; text-align: center;
+}
+.types button .emo { font-size: 20px; display: block; }
+.types button .lb { font-size: 11px; color: var(--muted); display: block; }
+.types button .bn { font-size: 10px; font-weight: 800; color: var(--accent-2); }
+.types button.active { border-color: var(--accent); background: rgba(255, 77, 61, .12); }
+.types button.active .lb { color: var(--text); }
+
 /* ---------- Toast ---------- */
 .toast {
   position: fixed; left: 50%; transform: translateX(-50%);
