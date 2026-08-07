@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<title>Bestemmiometro</title>
+<meta name="description" content="Il contatore ufficiale delle bestemmie del roadtrip.">
+<meta name="theme-color" content="#0d0f14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Bestemmiometro">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/icon-180.png">
+<link rel="icon" href="assets/icon-192.png">
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <span class="brand-mark">🤬</span>
+      <div class="brand-text">
+        <strong id="tripName">Bestemmiometro</strong>
+        <small id="tripSubtitle">Roadtrip</small>
+      </div>
+    </div>
+    <button class="icon-btn" data-action="sync-now" title="Sincronizza" aria-label="Sincronizza">
+      <span id="syncIcon">☁︎</span>
+    </button>
+  </div>
+</header>
+
+<main id="view" class="view"></main>
+
+<nav class="tabbar">
+  <a href="#/" data-tab="/"><span>🏠</span><em>Oggi</em></a>
+  <a href="#/tappe" data-tab="/tappe"><span>🗺️</span><em>Tappe</em></a>
+  <a href="#/classifica" data-tab="/classifica"><span>🏆</span><em>Classifica</em></a>
+  <a href="#/frasi" data-tab="/frasi"><span>💬</span><em>Frasi</em></a>
+  <a href="#/admin" data-tab="/admin"><span>⚙️</span><em>Admin</em></a>
+</nav>
+
+<div id="sheet" class="sheet" hidden>
+  <div class="sheet-backdrop" data-action="close-sheet"></div>
+  <div class="sheet-panel" role="dialog" aria-modal="true">
+    <div class="sheet-handle" data-action="close-sheet"></div>
+    <div id="sheetBody"></div>
+  </div>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+
+<script src="assets/store.js"></script>
+<script src="assets/notifications.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>
