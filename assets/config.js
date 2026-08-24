@@ -30,8 +30,18 @@
       url: reveal('ChEHBBZXQkYcHhwOAwJZAhsTBhsZAxcLEgUQDEMeHB8MBxUBCgMRAA=='),
       key: reveal('EQcsBBAPAQAcBQQWHgpyQg1YIgQQPAAaFUY/SAsaEQMnDhshPnIqLg4zPRgRMg==')
     },
-    // I suggerimenti finiscono in un "viaggio" riservato, separato dai dati di gioco.
+    // Gli archivi di fine viaggio stanno in un contenitore comune: così restano
+    // consultabili anche quando il gruppo cambia codice viaggio.
+    archiveTrip: reveal('PToSBgYFBB8GMjo='),
+
+    // I suggerimenti stanno in un contenitore riservato, separato dai viaggi:
+    // non vengono mai scaricati dall'app normale, solo dall'area sviluppatore.
     feedbackTrip: '__suggerimenti__',
+
+    // Codice dell'area sviluppatore (in chiaro sarebbe leggibile: cambialo qui
+    // se lo condividi per sbaglio). Vale solo per leggere i suggerimenti.
+    developerCode: reveal('ABcWGhFAX1ldWw=='),
+
     developer: 'Laoretti Brent.gani'
   };
 })(window);

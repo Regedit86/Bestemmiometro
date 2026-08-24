@@ -5,10 +5,14 @@
   'use strict';
 
   var KEY = 'bestemmiometro:v1';
-  // Collezioni di gioco, legate al codice viaggio.
-  var COLLECTIONS = ['travelers', 'stages', 'curses', 'quotes', 'archives'];
-  // I suggerimenti viaggiano su un codice riservato, separato dalle partite.
+  // Dati di gioco: legati al codice viaggio, li vede solo chi è nel gruppo.
+  var TRIP = ['travelers', 'stages', 'curses', 'quotes'];
+  // Archivi di fine viaggio: contenitore comune, restano leggibili anche
+  // quando il gruppo cambia codice viaggio.
+  var SHARED = ['archives'];
+  // Suggerimenti: contenitore riservato, scaricato solo dall'area sviluppatore.
   var PRIVATE = ['feedback'];
+  var COLLECTIONS = TRIP.concat(SHARED);
   var ALL = COLLECTIONS.concat(PRIVATE);
 
   function factory() {
@@ -33,7 +37,8 @@
       lastSync: 0,
       lastSyncWarning: '',
       seenWelcome: false,
-      unlocked: false
+      unlocked: false,
+      devUnlocked: false
     }
   };
 
@@ -74,8 +79,9 @@
     ALL.forEach(function (c) {
       if (Array.isArray(parsed[c])) state[c] = parsed[c];
     });
-    // la sessione admin non viene ricordata tra un'apertura e l'altra
+    // le sessioni protette non vengono ricordate tra un'apertura e l'altra
     state.settings.unlocked = false;
+    state.settings.devUnlocked = false;
     return state;
   }
 
@@ -175,7 +181,9 @@
   }
 
   function tripFor(kind) {
-    if (PRIVATE.indexOf(kind) !== -1) return (global.Config && global.Config.feedbackTrip) || '__suggerimenti__';
+    var cfg = global.Config || {};
+    if (PRIVATE.indexOf(kind) !== -1) return cfg.feedbackTrip || '__suggerimenti__';
+    if (SHARED.indexOf(kind) !== -1) return cfg.archiveTrip || '__archivi__';
     return state.settings.supabase.tripId;
   }
 
@@ -246,22 +254,26 @@
     });
   }
 
-  function pull() {
-    var url = endpoint() + '?select=*&trip_id=eq.' + encodeURIComponent(state.settings.supabase.tripId);
+  function fetchTrip(tripId) {
+    var url = endpoint() + '?select=*&trip_id=eq.' + encodeURIComponent(tripId);
     return fetch(url, { headers: headers() }).then(function (res) {
       if (!res.ok) return res.text().then(function (t) { throw new Error('Pull fallito (' + res.status + '): ' + t.slice(0, 160)); });
       return res.json();
-    }).then(function (rows) { return merge(rows, COLLECTIONS); });
+    });
   }
 
-  // I suggerimenti si scaricano solo su richiesta, dalla zona admin.
+  // Due contenitori: i dati del proprio viaggio e gli archivi comuni.
+  function pull() {
+    return Promise.all([
+      fetchTrip(state.settings.supabase.tripId).then(function (rows) { return merge(rows, TRIP); }),
+      fetchTrip(tripFor('archives')).then(function (rows) { return merge(rows, SHARED); })
+    ]).then(function (counts) { return counts[0] + counts[1]; });
+  }
+
+  // I suggerimenti si scaricano solo su richiesta, dall'area sviluppatore.
   function pullFeedback() {
     if (!connected()) return Promise.resolve(0);
-    var url = endpoint() + '?select=*&trip_id=eq.' + encodeURIComponent(tripFor('feedback'));
-    return fetch(url, { headers: headers() }).then(function (res) {
-      if (!res.ok) return res.text().then(function (t) { throw new Error('(' + res.status + ') ' + t.slice(0, 160)); });
-      return res.json();
-    }).then(function (rows) {
+    return fetchTrip(tripFor('feedback')).then(function (rows) {
       var n = merge(rows, PRIVATE);
       save(); emit();
       return n;

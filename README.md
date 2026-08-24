@@ -123,12 +123,26 @@ Da lì, e da **Le bestemmie del passato**, puoi:
 ## 7. Suggerimenti allo sviluppatore
 
 In fondo alla sezione Admin c'è **Contatta lo sviluppatore** (il nome si cambia in
-`assets/config.js`): chiunque può mandare un'idea, anche con il PIN attivo. I messaggi
-finiscono in un contenitore separato del database e si leggono in **Suggerimenti
-ricevuti**, dietro il PIN, toccando *Aggiorna*.
+`assets/config.js`): chiunque può mandare un'idea, anche con il PIN attivo.
+
+I messaggi **non passano dai viaggi**: finiscono in un contenitore riservato che l'app
+normale non scarica mai. Si leggono solo nell'**Area sviluppatore** — il link sotto la
+scheda contatti — protetta da un codice separato dal PIN admin
+(`developerCode` in `assets/config.js`, offuscato come le altre chiavi).
 
 Va detto chiaramente: sono nascosti, non cifrati. Chi conosce la chiave pubblica dell'app
 potrebbe leggerli. Per raccogliere idee sul viaggio va benissimo, per informazioni serie no.
+
+### I tre contenitori
+
+| Contenitore | Cosa contiene | Chi lo vede |
+|---|---|---|
+| `<codice viaggio>` | viaggiatori, tappe, bestemmie, frasi | solo chi ha quel codice |
+| `__archivi__` | archivi di fine viaggio | tutti, anche cambiando codice viaggio |
+| `__suggerimenti__` | messaggi allo sviluppatore | solo l'area sviluppatore, col codice |
+
+Gli archivi stanno in comune apposta: quando il gruppo apre un viaggio nuovo con un
+codice nuovo, **Le bestemmie del passato** continua a mostrare quelli vecchi.
 
 ## 8. Backup
 
@@ -146,7 +160,8 @@ potrebbe leggerli. Per raccogliere idee sul viaggio va benissimo, per informazio
 - Chi ha il link d'invito può leggere e scrivere le bestemmie del viaggio. È un gioco fra
   amici: non metteteci dentro altro.
 - Il **PIN admin** evita gli scherzi, non è una protezione seria: è controllato dal
-  telefono, non dal server.
+  telefono, non dal server. Lo stesso vale per il codice dell'area sviluppatore: tiene
+  la posta fuori dalla vista di chi usa l'app, non la mette al sicuro.
 
 ## Struttura del progetto
 
@@ -165,6 +180,6 @@ supabase/migrazione-2.sql    aggiornamento per archivi e suggerimenti
 ```
 
 I dati stanno in `localStorage` in sei collezioni (`travelers`, `stages`, `curses`,
-`quotes`, `archives`, `feedback`). Ogni record porta `updatedAt` e un flag `dirty`: la
+`quotes` legate al codice viaggio, `archives` in comune, `feedback` riservata). Ogni record porta `updatedAt` e un flag `dirty`: la
 sincronizzazione manda i record modificati, tipo per tipo, e in caso di conflitto vince la
 modifica più recente. Se il database rifiuta una categoria, le altre passano lo stesso.

@@ -235,6 +235,7 @@
       case 'benvenuto': html = viewWelcome(); break;
       case 'passato': html = route.parts[1] ? viewArchive(route.parts[1]) : viewPast(); break;
       case 'riepilogo': html = viewSummary(route.parts[1]); break;
+      case 'sviluppatore': html = viewDeveloper(); break;
       default: html = viewHome();
     }
 
@@ -1058,7 +1059,6 @@
     out += '</div></div>';
 
     out += sectionContact();
-    out += sectionFeedbackInbox();
     return out;
   }
 
@@ -1067,11 +1067,24 @@
     var out = '<div class="section"><div class="section-title">Contatta ' + esc(dev) + '</div><div class="card">';
     out += '<p class="muted" style="margin-top:0;font-size:14px">Un\'idea, una categoria che manca, qualcosa che non funziona? Scrivilo qui: arriva direttamente a chi sviluppa l\'app.</p>';
     out += '<div class="btn-row"><button class="btn ghost" data-action="feedback">💡 Manda un suggerimento</button></div>';
+    out += '<div class="center" style="margin-top:12px"><a class="muted" style="font-size:12px" href="#/sviluppatore">Area sviluppatore</a></div>';
     out += '</div></div>';
     return out;
   }
 
-  function sectionFeedbackInbox() {
+  function viewDeveloper() {
+    var dev = (window.Config && Config.developer) || 'lo sviluppatore';
+    if (!Store.state.settings.devUnlocked) {
+      var gate = '<div class="section"><div class="card">';
+      gate += '<h2 style="margin-top:0">Area sviluppatore</h2>';
+      gate += '<p class="muted">Riservata a ' + esc(dev) + ': qui arrivano i suggerimenti mandati dall\'app.</p>';
+      gate += '<div class="field"><label>Codice</label><input type="password" id="devCode" placeholder="••••••" autocapitalize="off" autocorrect="off" spellcheck="false"></div>';
+      gate += '<button class="btn primary" data-action="dev-unlock">Entra</button>';
+      gate += '<div class="btn-row"><a class="btn ghost" href="#/admin">← Torna indietro</a></div>';
+      gate += '</div></div>';
+      return gate;
+    }
+
     var list = Store.all('feedback').slice().sort(function (a, b) { return b.at - a.at; });
     var out = '<div class="section"><div class="section-title">Suggerimenti ricevuti <button data-action="load-feedback">Aggiorna</button></div>';
     if (!list.length) {
@@ -1085,7 +1098,8 @@
       });
       out += '</div>';
     }
-    out += '<div class="hint" style="margin-top:10px">Nota: i suggerimenti sono conservati nello stesso database dell\'app, quindi tecnicamente sono leggibili da chi conosce la chiave pubblica. Sono nascosti dietro il PIN, non cifrati.</div>';
+    out += '<div class="hint" style="margin-top:10px">I suggerimenti stanno in un contenitore separato dai viaggi: nessun gruppo li scarica insieme alle proprie bestemmie. Detto onestamente, però, sono nascosti e non cifrati: chi conosce la chiave pubblica dell\'app potrebbe leggerli.</div>';
+    out += '<div class="btn-row"><a class="btn ghost" href="#/admin">← Torna all\'Admin</a></div>';
     out += '</div>';
     return out;
   }
@@ -1744,6 +1758,14 @@
     },
 
     'feedback': function () { sheetFeedback(); },
+
+    'dev-unlock': function () {
+      var code = document.getElementById('devCode').value.trim();
+      var expected = (window.Config && Config.developerCode) || '';
+      if (!expected || code !== expected) { toast('Codice sbagliato'); return; }
+      Store.setSettings({ devUnlocked: true });
+      actions['load-feedback']();
+    },
 
     'send-feedback': function () {
       var text = document.getElementById('fbText').value.trim();
