@@ -29,7 +29,7 @@
   var MODES = [
     { v: 'solo', emo: '🎤', lb: 'Solo', bonus: 0, desc: 'Una persona, un misfatto' },
     { v: 'coppia', emo: '👥', lb: 'Coppia', bonus: 2, desc: 'Combinata: uno costruisce, l\'altro completa. Punti a entrambi.' },
-    { v: 'wireless', emo: '📡', lb: 'Wireless', bonus: 2, desc: 'Non detta, ma trasmessa lo stesso: sguardo, gesto, silenzio eloquente.' }
+    { v: 'wireless', emo: '📡', lb: 'Wireless', bonus: 2, desc: 'Solo labiale, senza voce: non la sente nessuno ma la leggono tutti.' }
   ];
 
   var BONUS_LABELS = ['Niente', 'Carina', 'Notevole', 'Capolavoro'];
@@ -1183,7 +1183,7 @@
       document.getElementById('partnerField').hidden = mode !== 'coppia';
       var textEl = document.getElementById('curseText');
       textEl.placeholder = mode === 'wireless'
-        ? 'Es. lo sguardo dopo il terzo autovelox'
+        ? 'Es. labiale perfetto al terzo autovelox'
         : 'Es. rotonda sbagliata a Foggia';
     });
   }

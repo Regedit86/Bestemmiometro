@@ -8,7 +8,7 @@ ogni frase celebre che verrà ricordata per sempre.
 - **Bestemmia bonus**: tipo (creativa, composta, in dialetto, straniera, autogol) e
   stelle di fantasia, perché la creatività vale più della quantità
 - **Istigazione, coppia e wireless**: chi provoca guadagna una stella, le combinate
-  contano per due, e la bestemmia trasmessa senza parole vale comunque
+  contano per due, e quella recitata a labiale vale come le altre
 - **Frasi celebri** del giorno, per persona
 - **Classifica** per tappa, per giornata e per tutto il viaggio, con albo d'oro,
   **classifica fantasia** e podio degli **istigatori**
@@ -100,8 +100,8 @@ urlate in fila. La **raffica +5** resta esclusa dai bonus, è quantità e non qu
 
 - **Coppia**: una bestemmia costruita in due. Conta nel totale di entrambi e assegna a
   entrambi i punti pieni.
-- **Wireless**: non pronunciata, ma arrivata lo stesso — lo sguardo, il gesto, il
-  silenzio eloquente dopo il terzo autovelox.
+- **Wireless**: detta senza audio, solo con il labiale. Non la sente nessuno, ma tutti
+  quelli che guardano la leggono benissimo.
 - **Istigazione**: chi ha provocato entra nella classifica **Istigatori** e si porta a
   casa una stella; chi ha ceduto si prende il punto in più.
 
