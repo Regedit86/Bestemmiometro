@@ -7,11 +7,16 @@ ogni frase celebre che verrà ricordata per sempre.
 - **Inserimento manuale** con un tocco sulla faccia del colpevole, gravità da 😐 a 🔥
 - **Bestemmia bonus**: tipo (creativa, composta, in dialetto, straniera, autogol) e
   stelle di fantasia, perché la creatività vale più della quantità
+- **Istigazione, coppia e wireless**: chi provoca guadagna una stella, le combinate
+  contano per due, e la bestemmia trasmessa senza parole vale comunque
 - **Frasi celebri** del giorno, per persona
-- **Classifica** per tappa, per giornata e per tutto il viaggio, con albo d'oro
-  e una **classifica fantasia** dedicata alle bonus
+- **Classifica** per tappa, per giornata e per tutto il viaggio, con albo d'oro,
+  **classifica fantasia** e podio degli **istigatori**
+- **Fine vacanza**: chiudi il viaggio, esporta il ricordo come **immagine** o **PDF**,
+  e ritrova tutto in **Le bestemmie del passato**
 - **Promemoria serale** per non dimenticare di segnare i danni
-- **Condivisione** con gli amici: tutti vedono lo stesso conteggio
+- **Condivisione** pronta all'uso: l'app è già collegata al database, agli amici serve
+  solo il codice viaggio
 - Funziona **offline** in auto e sincronizza appena torna il segnale
 
 Nessun framework, nessuna installazione, nessuna compilazione: sono file HTML, CSS e
@@ -24,137 +29,142 @@ JavaScript. Si pubblica e si usa **direttamente dall'iPhone**.
 Serve solo Safari.
 
 1. Apri `github.com/Regedit86/Bestemmiometro` e fai il login.
-2. Tocca **Settings** (se non lo vedi, tocca i tre puntini in alto a destra).
-3. Nel menu di sinistra scegli **Pages**.
-4. In *Build and deployment* → *Source* scegli **Deploy from a branch**.
-5. In *Branch* scegli il ramo `claude/bestemmiometro-road-trip-app-xnaujs`
-   (oppure `main`, se hai già unito le modifiche), cartella `/ (root)`, poi **Save**.
-6. Aspetta 1-2 minuti e ricarica: in cima comparirà l'indirizzo, tipo
-   **`https://regedit86.github.io/Bestemmiometro/`**
-
-Quello è il link dell'app. Fine: non serve altro.
+2. **Settings** → **Pages** (GitHub Pages richiede che il repository sia pubblico,
+   a meno di un piano a pagamento).
+3. *Source*: **Deploy from a branch** → branch `claude/bestemmiometro-road-trip-app-xnaujs`
+   (oppure `main`), cartella `/ (root)` → **Save**.
+4. Dopo 1-2 minuti l'indirizzo compare in cima: **`https://regedit86.github.io/Bestemmiometro/`**
 
 ## 2. Installarla sull'iPhone
 
 1. Apri il link con **Safari** (non Chrome: le notifiche funzionano solo da Safari).
-2. Tocca il pulsante **Condividi** in basso → **Aggiungi alla schermata Home**.
+2. **Condividi** → **Aggiungi alla schermata Home** → **Aggiungi**.
 3. Apri il Bestemmiometro dall'icona: parte a schermo intero come una vera app.
 
-> Questo passaggio non è facoltativo se vuoi le notifiche: iOS le concede solo alle
-> app aggiunte alla schermata Home.
+Alla prima apertura l'app mostra da sola questi passaggi e chiede il codice viaggio.
 
-## 3. Configurare il viaggio
+## 3. Il database (una volta sola, per chi organizza)
 
-Nella tab **Admin**:
+URL e chiave pubblica del progetto Supabase sono **già dentro l'app**: gli amici non
+devono configurare niente. Chi mette in piedi il progetto deve solo creare la tabella.
 
-- **Viaggiatori** → *Aggiungi*: nome, soprannome, ruolo, descrizione, colore e foto
-  (il tasto 📷 apre direttamente la fotocamera o le foto dell'iPhone; l'immagine viene
-  ridotta automaticamente, quindi non appesantisce l'app).
-- **Tappe** → *Aggiungi*: titolo, da / a, data, note. L'ultima tappa creata diventa
-  quella attiva; puoi cambiarla dalla schermata **Oggi** o dal dettaglio della tappa.
-- **Il viaggio**: nome dell'app, sottotitolo, date e un **PIN admin** facoltativo, così
-  gli amici non ti smontano la configurazione per scherzo.
+1. Su Supabase, apri **SQL Editor** → *New query*
+2. Incolla il contenuto di [`supabase/schema.sql`](supabase/schema.sql) e premi **Run**
+3. Se avevi già creato la tabella con la versione precedente, esegui anche
+   [`supabase/migrazione-2.sql`](supabase/migrazione-2.sql): aggiunge i tipi `archives`
+   e `feedback`. Senza quella riga il gioco funziona lo stesso, ma gli archivi di fine
+   viaggio e i suggerimenti non vengono sincronizzati (l'app te lo segnala in Admin).
 
-## 4. Usarla durante il viaggio
+Per cambiare progetto Supabase: **Admin → Gruppo e sincronizzazione → Impostazioni
+avanzate**. I valori scritti a mano hanno la precedenza e sopravvivono agli aggiornamenti.
 
-- Tab **Oggi**: tocchi la faccia di chi ha bestemmiato, scegli la gravità, aggiungi
-  facoltativamente cosa è successo, **Registra**. Se è stata una raffica, c'è **+5**.
-- **💬 Frase celebre**: per salvare la perla del giorno, attribuita alla persona giusta.
+## 4. Il codice viaggio
 
-### La bestemmia bonus
+È la parola d'ordine del gruppo: **chi scrive lo stesso codice vede lo stesso conteggio**.
+Si imposta in **Admin → Gruppo e sincronizzazione** (o alla prima apertura).
 
-Contare e basta premia chi urla di più, non chi è più bravo. Per questo ogni
-registrazione ha due campi in più:
+**Admin → Invita gli amici** offre due link:
 
-| Tipo | Bonus |
+- **Invita al viaggio** — contiene già il codice: loro toccano *Entra nel gruppo* e sono dentro
+- **Condividi l'app** — senza codice, per quando il viaggio non è il tuo: se lo scelgono loro
+
+L'app sincronizza da sola: all'apertura, quando torni sull'app e ogni 45 secondi mentre è
+aperta. Senza campo continui a segnare e l'invio parte appena torna la linea (l'icona ☁︎•
+in alto indica che c'è roba in coda).
+
+## 5. Usarla durante il viaggio
+
+- Tab **Oggi**: tocchi la faccia di chi ha bestemmiato, scegli com'è andata, la gravità,
+  il tipo, le stelle, chi ha istigato, e **Registra**. Per le raffiche c'è **+5**.
+- **💬 Frase celebre**: per salvare la perla del giorno.
+- Tab **Tappe**: conteggio per tratta, riepilogo e accesso all'archivio.
+- Tab **Classifica**: podio generale, fantasia, istigatori, bonus e albo d'oro.
+- Tocca una persona per la sua scheda: statistiche, bonus migliori, frasi e storico.
+- Il tasto ✕ nel diario cancella un inserimento sbagliato.
+
+### Come si contano i punti
+
+| Voce | Punti |
 |---|---|
-| 🗿 Classica — il grande classico, senza sforzo | +0 |
-| 🎨 Creativa — accostamento mai sentito prima | +2 |
-| 🧱 Composta — costruzione lunga e articolata | +3 |
-| 🪗 Dialetto — sapore locale certificato | +2 |
-| 🌍 Straniera — internazionale, con accento | +2 |
-| 🙈 Autogol — involontaria, ma memorabile | +1 |
+| Gravità (da 😐 Blanda a 🔥 Storica) | da 1 a 5 |
+| 🎨 Creativa / 🪗 Dialetto / 🌍 Straniera | +2 |
+| 🧱 Composta | +3 |
+| 🙈 Autogol | +1 |
+| ⭐ Bonus fantasia | +2 per stella |
+| 👥 Coppia combinata | +2 (e conta per entrambi) |
+| 📡 Wireless | +2 |
+| 🎯 Istigata | +1 a chi la dice, ⭐ (2 pt di fantasia) a chi istiga |
 
-Sopra al tipo c'è il **bonus fantasia**: da zero a tre stelle assegnate dal gruppo,
-**2 punti l'una**. Il punteggio finale di una bestemmia è quindi
-`gravità + bonus del tipo + 2 × stelle`: una 🧱 composta da tre stelle vale più di
-cinque bestemmie classiche urlate in fila. La **raffica +5** resta volutamente esclusa
-dai bonus — è quantità, non qualità.
+Una 🧱 composta pesante da tre stelle vale 13 punti: più di cinque bestemmie classiche
+urlate in fila. La **raffica +5** resta esclusa dai bonus, è quantità e non qualità.
 
-Le bonus finiscono nella **classifica fantasia** (che ignora i numeri e conta solo la
-creatività), nell'**albo delle bestemmie bonus** con le migliori del periodo, nel
-riepilogo **per tipo** e nella scheda personale di ognuno.
-- Tab **Tappe**: conteggio per ogni tratta e riepilogo del viaggio.
-- Tab **Classifica**: podio per tutto il viaggio / tappa corrente / oggi, gravità media,
-  giornata peggiore e bestemmia record.
-- Tocca una persona in classifica per la sua scheda: statistiche, frasi e storico.
-- Sbagliato un inserimento? Il tasto ✕ nel diario lo cancella.
+- **Coppia**: una bestemmia costruita in due. Conta nel totale di entrambi e assegna a
+  entrambi i punti pieni.
+- **Wireless**: non pronunciata, ma arrivata lo stesso — lo sguardo, il gesto, il
+  silenzio eloquente dopo il terzo autovelox.
+- **Istigazione**: chi ha provocato entra nella classifica **Istigatori** e si porta a
+  casa una stella; chi ha ceduto si prende il punto in più.
 
-## 5. Condividere il conteggio con gli amici
+## 6. Fine vacanza
 
-Senza questo passaggio l'app funziona benissimo, ma ogni telefono ha il **suo** conteggio.
-Per averne uno unico serve un database gratuito (Supabase). Anche questo si fa dal telefono.
+**Admin → Fine vacanza → 🏁 Chiudi il viaggio**: le statistiche vengono congelate in un
+archivio permanente e il contatore riparte da zero (puoi tenere gli stessi viaggiatori).
+Fallo quando tutti hanno sincronizzato, così nell'archivio finisce tutto.
 
-1. Vai su **supabase.com** → *Start your project* → accedi con GitHub.
-2. **New project**: dai un nome, scegli una password qualsiasi (non ti servirà) e la
-   regione più vicina. Aspetta un paio di minuti che finisca di crearsi.
-3. Menu **SQL Editor** → *New query*. Apri in un'altra scheda il file
-   [`supabase/schema.sql`](supabase/schema.sql) di questo repository, copia tutto,
-   incollalo e premi **Run**. Deve rispondere *Success*.
-4. Menu **Project Settings** (l'ingranaggio) → **API**. Ti servono due valori:
-   - **Project URL** (tipo `https://abcdefgh.supabase.co`)
-   - **anon public** (una chiave lunghissima che inizia con `eyJ...`)
-5. Torna nel Bestemmiometro → **Admin** → *Condivisione fra amici*: incolla URL e chiave,
-   scegli un **codice viaggio** (es. `puglia2026`) e tocca **Salva e sincronizza**.
-6. Tocca **📲 Invita gli amici**: parte un link via WhatsApp che contiene già tutta la
-   configurazione. Loro lo aprono, toccano **Entra nel gruppo**, aggiungono l'app alla
-   schermata Home e sono dentro.
+Da lì, e da **Le bestemmie del passato**, puoi:
 
-Da quel momento l'app sincronizza da sola: all'apertura, ogni volta che torni sull'app e
-ogni 45 secondi mentre è aperta. Se sei in galleria senza campo continui a segnare tutto:
-appena torna la linea parte l'invio (l'icona ☁︎• in alto indica che c'è roba da spedire).
+- **📸 Immagine** — una locandina verticale con podio, punti, re della fantasia e la
+  frase migliore, pronta da mandare su WhatsApp
+- **📄 PDF** — il documento completo con classifica, bonus e frasi celebri: tocca
+  *Salva come PDF* e usa il tasto Condividi dell'anteprima di stampa
+- **💬 Testo** — il riassunto in caratteri, per chi vuole solo incollarlo in chat
+- **♻️ Ricarica** — rimette in gioco un viaggio archiviato
 
-> **Nota onesta sulla privacy:** chiunque abbia quel link può leggere e scrivere le
-> bestemmie del vostro viaggio. È un gioco fra amici, non metteteci dentro cose serie.
+## 7. Suggerimenti allo sviluppatore
 
-## 6. Le notifiche
+In fondo alla sezione Admin c'è **Contatta lo sviluppatore** (il nome si cambia in
+`assets/config.js`): chiunque può mandare un'idea, anche con il PIN attivo. I messaggi
+finiscono in un contenitore separato del database e si leggono in **Suggerimenti
+ricevuti**, dietro il PIN, toccando *Aggiorna*.
 
-In **Admin → Promemoria** attivi le notifiche e scegli l'orario (di default 21:00).
+Va detto chiaramente: sono nascosti, non cifrati. Chi conosce la chiave pubblica dell'app
+potrebbe leggerli. Per raccogliere idee sul viaggio va benissimo, per informazioni serie no.
 
-Va detto com'è: **senza un server, l'iPhone mostra la notifica quando l'app è aperta o è
-appena stata aperta.** Per avere davvero la sveglia ogni sera bastano 30 secondi di setup
-con l'app **Comandi rapidi** (già installata su iOS):
+## 8. Backup
 
-1. Apri **Comandi rapidi** → tab **Automazione** → **+** → **Ora del giorno**
-2. Scegli **21:00**, ripeti **Ogni giorno** → *Avanti*
-3. **Nuovo comando rapido vuoto** → cerca l'azione **Apri app** → scegli **Bestemmiometro**
-4. Disattiva *Chiedi prima di eseguire* → **Fine**
-
-Ogni sera alle 21 l'app si apre da sola e ti sbatte in faccia la notifica con il conteggio
-del giorno (e una frase diversa ogni volta se non avete segnato niente).
-
-Alternativa pigra: un promemoria giornaliero in **Promemoria** o una sveglia ricorrente.
-
-## 7. Backup
-
-**Admin → Dati** permette di esportare tutto in un file JSON e reimportarlo.
-Fallo a fine viaggio, prima di cancellare qualcosa per sbaglio.
+**Admin → Dati** esporta tutto in un file JSON e lo reimporta. Fallo a fine viaggio.
 
 ---
+
+## Note oneste su sicurezza e privacy
+
+- L'app pubblicata è raggiungibile da chiunque abbia il link, come qualsiasi sito.
+- URL e chiave pubblica Supabase sono dentro il codice, offuscati. **L'offuscamento non è
+  cifratura**: chi vuole guardare, guarda. Va bene comunque, perché quella chiave è nata
+  per stare nel browser ed è protetta dalle policy RLS. La chiave *segreta* non è nel
+  repository e non deve mai finirci.
+- Chi ha il link d'invito può leggere e scrivere le bestemmie del viaggio. È un gioco fra
+  amici: non metteteci dentro altro.
+- Il **PIN admin** evita gli scherzi, non è una protezione seria: è controllato dal
+  telefono, non dal server.
 
 ## Struttura del progetto
 
 ```
-index.html                 struttura e navigazione
-assets/styles.css          tema scuro mobile-first
-assets/store.js            dati, salvataggio locale, sincronizzazione Supabase
-assets/notifications.js    promemoria giornaliero
-assets/app.js              schermate, form, azioni
-sw.js                      service worker: funziona offline
-manifest.webmanifest       installazione sulla schermata Home
-supabase/schema.sql        tabella da creare su Supabase
+index.html                   struttura e navigazione
+assets/styles.css            tema scuro mobile-first + foglio di stampa
+assets/config.js             URL e chiave Supabase di fabbrica (offuscati)
+assets/store.js              dati, salvataggio locale, sincronizzazione
+assets/notifications.js      promemoria giornaliero
+assets/poster.js             immagine ricordo disegnata su canvas
+assets/app.js                schermate, form, azioni
+sw.js                        service worker: funziona offline
+manifest.webmanifest         installazione sulla schermata Home
+supabase/schema.sql          tabella da creare su Supabase
+supabase/migrazione-2.sql    aggiornamento per archivi e suggerimenti
 ```
 
-I dati stanno in `localStorage` come quattro collezioni (`travelers`, `stages`, `curses`,
-`quotes`). Ogni record porta `updatedAt` e un flag `dirty`: la sincronizzazione manda i
-record modificati e, in caso di conflitto, vince la modifica più recente.
+I dati stanno in `localStorage` in sei collezioni (`travelers`, `stages`, `curses`,
+`quotes`, `archives`, `feedback`). Ogni record porta `updatedAt` e un flag `dirty`: la
+sincronizzazione manda i record modificati, tipo per tipo, e in caso di conflitto vince la
+modifica più recente. Se il database rifiuta una categoria, le altre passano lo stesso.

@@ -1,11 +1,20 @@
 /* Bestemmiometro — livello dati.
-   Tutto vive in localStorage. Se configuri Supabase, i record vengono
+   Tutto vive in localStorage. Con Supabase configurato i record vengono
    sincronizzati con gli altri telefoni (last-write-wins per singolo record). */
 (function (global) {
   'use strict';
 
   var KEY = 'bestemmiometro:v1';
-  var COLLECTIONS = ['travelers', 'stages', 'curses', 'quotes'];
+  // Collezioni di gioco, legate al codice viaggio.
+  var COLLECTIONS = ['travelers', 'stages', 'curses', 'quotes', 'archives'];
+  // I suggerimenti viaggiano su un codice riservato, separato dalle partite.
+  var PRIVATE = ['feedback'];
+  var ALL = COLLECTIONS.concat(PRIVATE);
+
+  function factory() {
+    var cfg = (global.Config && global.Config.supabase) || { url: '', key: '' };
+    return { url: cfg.url || '', key: cfg.key || '', tripId: '' };
+  }
 
   var defaults = {
     trip: { name: 'Bestemmiometro', subtitle: 'Roadtrip', startDate: '', endDate: '', pin: '' },
@@ -13,12 +22,17 @@
     stages: [],
     curses: [],
     quotes: [],
+    archives: [],
+    feedback: [],
     settings: {
       currentStageId: null,
       reminderEnabled: false,
       reminderTime: '21:00',
       lastReminderDate: '',
       supabase: { url: '', key: '', tripId: '' },
+      lastSync: 0,
+      lastSyncWarning: '',
+      seenWelcome: false,
       unlocked: false
     }
   };
@@ -41,12 +55,23 @@
       try { parsed = JSON.parse(raw) || {}; } catch (e) { parsed = {}; }
     }
     state = clone(defaults);
+    state.settings.supabase = factory();
     if (parsed.trip) Object.assign(state.trip, parsed.trip);
     if (parsed.settings) {
+      var sb = parsed.settings.supabase || {};
       Object.assign(state.settings, parsed.settings);
-      Object.assign(state.settings.supabase, (parsed.settings.supabase || {}));
+      // Di norma vincono URL e chiave di fabbrica, così un aggiornamento
+      // dell'app corregge una configurazione vecchia. Se però qualcuno li ha
+      // cambiati a mano nelle impostazioni avanzate, la sua scelta resta.
+      var custom = !!(sb.custom && sb.url && sb.key);
+      state.settings.supabase = {
+        url: custom ? sb.url : (factory().url || sb.url || ''),
+        key: custom ? sb.key : (factory().key || sb.key || ''),
+        tripId: sb.tripId || '',
+        custom: custom
+      };
     }
-    COLLECTIONS.forEach(function (c) {
+    ALL.forEach(function (c) {
       if (Array.isArray(parsed[c])) state[c] = parsed[c];
     });
     // la sessione admin non viene ricordata tra un'apertura e l'altra
@@ -63,13 +88,16 @@
     }
   }
 
-  function emit() { listeners.forEach(function (fn) { try { fn(state); } catch (e) {} }); }
+  function emit() { notify('change'); }
 
   function notify(event) {
     listeners.forEach(function (fn) { try { fn(state, event); } catch (e) {} });
   }
 
-  function subscribe(fn) { listeners.push(fn); return function () { listeners = listeners.filter(function (f) { return f !== fn; }); }; }
+  function subscribe(fn) {
+    listeners.push(fn);
+    return function () { listeners = listeners.filter(function (f) { return f !== fn; }); };
+  }
 
   /* ---------------- CRUD ---------------- */
 
@@ -82,7 +110,7 @@
     return hit && !hit.deleted ? hit : null;
   }
 
-  function insert(collection, data) {
+  function insert(collection, data, silent) {
     var now = Date.now();
     var record = Object.assign({}, data, {
       id: data.id || uid(),
@@ -92,25 +120,28 @@
       dirty: true
     });
     state[collection].push(record);
-    save(); emit();
+    save();
+    if (!silent) emit();
     return record;
   }
 
-  function update(collection, id, patch) {
+  function update(collection, id, patch, silent) {
     var record = (state[collection] || []).filter(function (r) { return r.id === id; })[0];
     if (!record) return null;
     Object.assign(record, patch, { updatedAt: Date.now(), dirty: true });
-    save(); emit();
+    save();
+    if (!silent) emit();
     return record;
   }
 
-  function remove(collection, id) {
+  function remove(collection, id, silent) {
     var record = (state[collection] || []).filter(function (r) { return r.id === id; })[0];
     if (!record) return false;
     record.deleted = true;
     record.updatedAt = Date.now();
     record.dirty = true;
-    save(); emit();
+    save();
+    if (!silent) emit();
     return true;
   }
 
@@ -123,6 +154,11 @@
   function syncConfigured() {
     var s = state.settings.supabase;
     return !!(s.url && s.key && s.tripId);
+  }
+
+  function connected() {
+    var s = state.settings.supabase;
+    return !!(s.url && s.key);
   }
 
   function endpoint() {
@@ -138,6 +174,11 @@
     }, extra || {});
   }
 
+  function tripFor(kind) {
+    if (PRIVATE.indexOf(kind) !== -1) return (global.Config && global.Config.feedbackTrip) || '__suggerimenti__';
+    return state.settings.supabase.tripId;
+  }
+
   function toRow(kind, record) {
     var data = {};
     Object.keys(record).forEach(function (key) {
@@ -145,7 +186,7 @@
     });
     return {
       id: record.id,
-      trip_id: state.settings.supabase.tripId,
+      trip_id: tripFor(kind),
       kind: kind,
       data: data,
       updated_at: record.updatedAt,
@@ -162,52 +203,86 @@
     });
   }
 
-  function push() {
-    var rows = [];
-    COLLECTIONS.forEach(function (c) {
-      (state[c] || []).forEach(function (r) { if (r.dirty) rows.push(toRow(c, r)); });
-    });
-    if (!rows.length) return Promise.resolve(0);
+  function postRows(rows) {
     return fetch(endpoint(), {
       method: 'POST',
       headers: headers({ 'Prefer': 'resolution=merge-duplicates,return=minimal' }),
       body: JSON.stringify(rows)
     }).then(function (res) {
-      if (!res.ok) return res.text().then(function (t) { throw new Error('Push fallito (' + res.status + '): ' + t); });
-      // marca come puliti solo i record effettivamente inviati
-      var sent = {};
-      rows.forEach(function (r) { sent[r.id] = r.updated_at; });
-      COLLECTIONS.forEach(function (c) {
-        (state[c] || []).forEach(function (r) {
-          if (sent[r.id] === r.updatedAt) r.dirty = false;
-        });
-      });
+      if (!res.ok) return res.text().then(function (t) { throw new Error('(' + res.status + ') ' + t.slice(0, 160)); });
       return rows.length;
+    });
+  }
+
+  function markClean(kind, rows) {
+    var sent = {};
+    rows.forEach(function (r) { sent[r.id] = r.updated_at; });
+    (state[kind] || []).forEach(function (r) {
+      if (sent[r.id] === r.updatedAt) r.dirty = false;
+    });
+  }
+
+  // Ogni tipo viaggia in una richiesta separata: se il database rifiuta una
+  // categoria (per esempio un vincolo non ancora aggiornato) le altre passano.
+  function push() {
+    var groups = {};
+    ALL.forEach(function (c) {
+      (state[c] || []).forEach(function (r) {
+        if (r.dirty) (groups[c] = groups[c] || []).push(toRow(c, r));
+      });
+    });
+    var kinds = Object.keys(groups);
+    if (!kinds.length) return Promise.resolve(0);
+
+    var failures = [];
+    return Promise.all(kinds.map(function (kind) {
+      return postRows(groups[kind])
+        .then(function () { markClean(kind, groups[kind]); })
+        .catch(function (err) { failures.push(kind + ' ' + err.message); });
+    })).then(function () {
+      state.settings.lastSyncWarning = failures.join(' · ');
+      if (failures.length === kinds.length) throw new Error(failures.join(' · '));
+      return kinds.length - failures.length;
     });
   }
 
   function pull() {
     var url = endpoint() + '?select=*&trip_id=eq.' + encodeURIComponent(state.settings.supabase.tripId);
     return fetch(url, { headers: headers() }).then(function (res) {
-      if (!res.ok) return res.text().then(function (t) { throw new Error('Pull fallito (' + res.status + '): ' + t); });
+      if (!res.ok) return res.text().then(function (t) { throw new Error('Pull fallito (' + res.status + '): ' + t.slice(0, 160)); });
+      return res.json();
+    }).then(function (rows) { return merge(rows, COLLECTIONS); });
+  }
+
+  // I suggerimenti si scaricano solo su richiesta, dalla zona admin.
+  function pullFeedback() {
+    if (!connected()) return Promise.resolve(0);
+    var url = endpoint() + '?select=*&trip_id=eq.' + encodeURIComponent(tripFor('feedback'));
+    return fetch(url, { headers: headers() }).then(function (res) {
+      if (!res.ok) return res.text().then(function (t) { throw new Error('(' + res.status + ') ' + t.slice(0, 160)); });
       return res.json();
     }).then(function (rows) {
-      var merged = 0;
-      rows.forEach(function (row) {
-        if (COLLECTIONS.indexOf(row.kind) === -1) return;
-        var incoming = fromRow(row);
-        var list = state[row.kind];
-        var existing = list.filter(function (r) { return r.id === incoming.id; })[0];
-        if (!existing) { list.push(incoming); merged++; return; }
-        // il record locale non ancora inviato vince solo se è più recente
-        if (incoming.updatedAt > (existing.updatedAt || 0)) {
-          var idx = list.indexOf(existing);
-          list[idx] = incoming;
-          merged++;
-        }
-      });
-      return merged;
+      var n = merge(rows, PRIVATE);
+      save(); emit();
+      return n;
     });
+  }
+
+  function merge(rows, allowed) {
+    var merged = 0;
+    rows.forEach(function (row) {
+      if (allowed.indexOf(row.kind) === -1) return;
+      var incoming = fromRow(row);
+      var list = state[row.kind];
+      var existing = list.filter(function (r) { return r.id === incoming.id; })[0];
+      if (!existing) { list.push(incoming); merged++; return; }
+      // il record locale non ancora inviato vince solo se è più recente
+      if (incoming.updatedAt > (existing.updatedAt || 0)) {
+        list[list.indexOf(existing)] = incoming;
+        merged++;
+      }
+    });
+    return merged;
   }
 
   var syncing = false;
@@ -221,7 +296,7 @@
       .then(function (merged) {
         state.settings.lastSync = Date.now();
         save(); notify('sync-done');
-        return { merged: merged };
+        return { merged: merged, warning: state.settings.lastSyncWarning };
       })
       .catch(function (err) {
         notify('sync-error');
@@ -232,14 +307,16 @@
 
   function pendingCount() {
     var n = 0;
-    COLLECTIONS.forEach(function (c) { (state[c] || []).forEach(function (r) { if (r.dirty) n++; }); });
+    ALL.forEach(function (c) { (state[c] || []).forEach(function (r) { if (r.dirty) n++; }); });
     return n;
   }
 
   /* ---------------- Import / Export ---------------- */
 
   function exportJSON() {
-    return JSON.stringify({ version: 1, exportedAt: Date.now(), trip: state.trip, travelers: state.travelers, stages: state.stages, curses: state.curses, quotes: state.quotes }, null, 2);
+    var out = { version: 2, exportedAt: Date.now(), trip: state.trip };
+    COLLECTIONS.forEach(function (c) { out[c] = state[c]; });
+    return JSON.stringify(out, null, 2);
   }
 
   function importJSON(text) {
@@ -267,6 +344,7 @@
 
   global.Store = {
     get state() { return state; },
+    collections: COLLECTIONS,
     uid: uid,
     all: all,
     find: find,
@@ -280,7 +358,9 @@
     save: save,
     emit: emit,
     sync: sync,
+    pullFeedback: pullFeedback,
     syncConfigured: syncConfigured,
+    connected: connected,
     pendingCount: pendingCount,
     exportJSON: exportJSON,
     importJSON: importJSON,

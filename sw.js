@@ -1,11 +1,13 @@
 /* Bestemmiometro — service worker: cache offline + apertura da notifica. */
-var CACHE = 'bestemmiometro-v1';
+var CACHE = 'bestemmiometro-v2';
 var ASSETS = [
   './',
   'index.html',
   'assets/styles.css',
+  'assets/config.js',
   'assets/store.js',
   'assets/notifications.js',
+  'assets/poster.js',
   'assets/app.js',
   'assets/icon-192.png',
   'assets/icon-512.png',
