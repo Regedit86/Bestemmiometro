@@ -14,6 +14,7 @@ ogni frase celebre che verrà ricordata per sempre.
   **classifica fantasia** e podio degli **istigatori**
 - **Fine vacanza**: chiudi il viaggio, esporta il ricordo come **immagine** o **PDF**,
   e ritrova tutto in **Le bestemmie del passato**
+- **Tema chiaro, scuro o automatico**, si sceglie in Admin
 - **Promemoria serale** per non dimenticare di segnare i danni
 - **Condivisione** pronta all'uso: l'app è già collegata al database, agli amici serve
   solo il codice viaggio
@@ -111,6 +112,15 @@ urlate in fila. La **raffica +5** resta esclusa dai bonus, è quantità e non qu
 archivio permanente e il contatore riparte da zero (puoi tenere gli stessi viaggiatori).
 Fallo quando tutti hanno sincronizzato, così nell'archivio finisce tutto.
 
+Alla riapertura successiva l'app parte da una schermata dedicata con due sole strade:
+
+- **Nuovo viaggio** — nome e codice nuovo, con *Crea e invita gli amici* che apre subito
+  la condivisione del link. Se chiudendo non hai tenuto nessuno del gruppo precedente,
+  subito dopo si apre la scheda per aggiungere il primo viaggiatore.
+- **Area sviluppatore** — il link piccolo in fondo, per leggere i suggerimenti.
+
+(*Più tardi* la fa sparire; si ritrova con **Admin → Fine vacanza → Apri un viaggio nuovo**.)
+
 Da lì, e da **Le bestemmie del passato**, puoi:
 
 - **📸 Immagine** — una locandina verticale con podio, punti, re della fantasia e la
@@ -126,8 +136,9 @@ In fondo alla sezione Admin c'è **Contatta lo sviluppatore** (il nome si cambia
 `assets/config.js`): chiunque può mandare un'idea, anche con il PIN attivo.
 
 I messaggi **non passano dai viaggi**: finiscono in un contenitore riservato che l'app
-normale non scarica mai. Si leggono solo nell'**Area sviluppatore** — il link sotto la
-scheda contatti — protetta da un codice separato dal PIN admin
+normale non scarica mai. Si leggono solo nell'**Area sviluppatore** — il link piccolo
+sotto la scheda contatti e in fondo alla schermata di nuovo viaggio — protetta da un PIN
+suo, diverso dal PIN admin e richiesto di nuovo a ogni riavvio
 (`developerCode` in `assets/config.js`, offuscato come le altre chiavi).
 
 Va detto chiaramente: sono nascosti, non cifrati. Chi conosce la chiave pubblica dell'app
@@ -144,7 +155,12 @@ potrebbe leggerli. Per raccogliere idee sul viaggio va benissimo, per informazio
 Gli archivi stanno in comune apposta: quando il gruppo apre un viaggio nuovo con un
 codice nuovo, **Le bestemmie del passato** continua a mostrare quelli vecchi.
 
-## 8. Backup
+## 8. Aspetto
+
+**Admin → Aspetto**: scuro (predefinito), chiaro, oppure automatico, che segue
+l'impostazione di iOS. La scelta resta salvata sul telefono di ciascuno.
+
+## 9. Backup
 
 **Admin → Dati** esporta tutto in un file JSON e lo reimporta. Fallo a fine viaggio.
 

@@ -33,6 +33,12 @@
   ];
 
   var BONUS_LABELS = ['Niente', 'Carina', 'Notevole', 'Capolavoro'];
+
+  var THEMES = [
+    { v: 'dark', emo: '🌙', lb: 'Scuro' },
+    { v: 'light', emo: '☀️', lb: 'Chiaro' },
+    { v: 'auto', emo: '📱', lb: 'Automatico' }
+  ];
   var INSTIGATION_POINT = 1;   // a chi la dice
   var INSTIGATION_STARS = 1;   // a chi istiga
 
@@ -236,6 +242,7 @@
       case 'passato': html = route.parts[1] ? viewArchive(route.parts[1]) : viewPast(); break;
       case 'riepilogo': html = viewSummary(route.parts[1]); break;
       case 'sviluppatore': html = viewDeveloper(); break;
+      case 'nuovo': html = viewNewTrip(); break;
       default: html = viewHome();
     }
 
@@ -243,7 +250,11 @@
     // il DOM solo se il contenuto è cambiato davvero, e la posizione si
     // azzera soltanto quando si cambia schermata.
     var samePage = route.key === lastKey;
-    if (html !== lastHTML) {
+    // Se l'utente sta scrivendo in un campo, il ridisegno aspetta: altrimenti
+    // una sincronizzazione gli cancellerebbe quello che sta digitando.
+    var focused = document.activeElement;
+    var typing = focused && view.contains(focused) && /^(INPUT|TEXTAREA|SELECT)$/.test(focused.tagName);
+    if (html !== lastHTML && !typing) {
       var y = window.scrollY;
       view.innerHTML = html;
       lastHTML = html;
@@ -274,6 +285,15 @@
     if ((el = document.getElementById('tripName')).textContent !== name) el.textContent = name;
     if ((el = document.getElementById('tripSubtitle')).textContent !== subtitle) el.textContent = subtitle;
     if ((el = document.getElementById('syncIcon')).textContent !== icon) el.textContent = icon;
+  }
+
+  function applyTheme() {
+    var t = Store.state.settings.theme || 'dark';
+    document.documentElement.setAttribute('data-theme', t);
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (!meta) return;
+    var light = t === 'light' || (t === 'auto' && window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches);
+    meta.setAttribute('content', light ? '#f4f6fa' : '#0d0f14');
   }
 
   function isStandalone() {
@@ -738,6 +758,52 @@
     return out;
   }
 
+  /* ---------------- vista: dopo la chiusura ---------------- */
+
+  // Il codice suggerito viene generato una volta sola: se lo rigenerassimo a
+  // ogni ridisegno cambierebbe sotto le dita di chi sta leggendo.
+  var suggestedCode = null;
+  function suggestCode() {
+    if (!suggestedCode) suggestedCode = 'viaggio-' + Math.random().toString(36).slice(2, 7);
+    return suggestedCode;
+  }
+
+  function viewNewTrip() {
+    var last = archives()[0];
+    var people = travelers();
+    var dev = (window.Config && Config.developer) || 'lo sviluppatore';
+
+    var out = '<div class="section"><div class="card center">';
+    out += '<div style="font-size:46px">🏁</div>';
+    out += '<h2 style="margin:6px 0 4px">Viaggio chiuso</h2>';
+    if (last) {
+      out += '<p class="muted" style="margin-top:0">“' + esc(last.name) + '” è al sicuro nell\'archivio.</p>';
+      out += '<div class="btn-row"><a class="btn ghost" href="#/passato/' + esc(last.id) + '">🗄 Rivedi il riepilogo</a></div>';
+    } else {
+      out += '<p class="muted" style="margin-top:0">Il contatore è azzerato: si riparte quando vuoi.</p>';
+    }
+    out += '</div></div>';
+
+    out += '<div class="section"><div class="section-title">Nuovo viaggio</div><div class="card">';
+    out += '<p class="muted" style="margin-top:0;font-size:14px">Serve un codice nuovo: è la parola d\'ordine del prossimo gruppo. Creane uno e passalo agli amici, chi lo scrive vede lo stesso conteggio.</p>';
+    out += '<div class="field"><label>Nome del viaggio</label><input type="text" id="newTripName" value="" placeholder="Es. Sicilia 2027"></div>';
+    out += '<div class="field"><label>Codice viaggio</label><input type="text" id="newTripCode" value="' + esc(suggestCode()) + '" autocapitalize="off" autocorrect="off" spellcheck="false"><div class="hint">Puoi cambiarlo: basta che sia uguale per tutti.</div></div>';
+    out += '<button class="btn primary" data-action="new-trip-share">📲 Crea e invita gli amici</button>';
+    out += '<div class="btn-row"><button class="btn ghost" data-action="new-trip-create">Crea e basta</button></div>';
+    if (!people.length) {
+      out += '<div class="hint" style="margin-top:12px">Non hai tenuto nessuno del gruppo precedente: subito dopo ti porto alla schermata per aggiungere i viaggiatori.</div>';
+    } else {
+      out += '<div class="hint" style="margin-top:12px">Il gruppo precedente resta: ' + people.map(function (t) { return esc(t.name); }).join(', ') + '.</div>';
+    }
+    out += '</div></div>';
+
+    out += '<div class="section center">';
+    out += '<a class="muted" style="font-size:12px" href="#/sviluppatore">Area sviluppatore — riservata a ' + esc(dev) + '</a>';
+    out += '<div style="margin-top:14px"><a class="muted" style="font-size:12px" data-action="new-trip-later" href="#/">Più tardi</a></div>';
+    out += '</div>';
+    return out;
+  }
+
   /* ---------------- vista: archivio ---------------- */
 
   function snapshotOf(archive) {
@@ -1038,6 +1104,16 @@
     out += '</details>';
     out += '</div></div>';
 
+    out += '<div class="section"><div class="section-title">Aspetto</div><div class="card">';
+    out += '<div class="types">';
+    THEMES.forEach(function (th) {
+      var active = (s.settings.theme || 'dark') === th.v;
+      out += '<button type="button"' + (active ? ' class="active"' : '') + ' data-action="set-theme" data-theme="' + th.v + '">';
+      out += '<span class="emo">' + th.emo + '</span><span class="lb">' + esc(th.lb) + '</span></button>';
+    });
+    out += '</div><div class="hint" style="margin-top:10px">“Automatico” segue l\'impostazione di iOS: chiaro di giorno, scuro di sera.</div>';
+    out += '</div></div>';
+
     out += '<div class="section"><div class="section-title">Promemoria</div><div class="card">';
     out += '<div class="switch-row"><div class="lbl">Notifiche giornaliere<small>Stato: ' + esc(permLabel()) + '</small></div>';
     out += '<button class="btn small ' + (s.settings.reminderEnabled ? 'ghost' : 'primary') + '" data-action="toggle-reminder">' + (s.settings.reminderEnabled ? 'Disattiva' : 'Attiva') + '</button></div>';
@@ -1050,6 +1126,7 @@
     out += '<p class="muted" style="margin-top:0;font-size:14px">Quando il viaggio è finito, chiudilo: le statistiche vengono congelate in un archivio consultabile per sempre e il contatore riparte da zero per la prossima avventura.</p>';
     out += '<div class="btn-row"><button class="btn primary" data-action="close-trip">🏁 Chiudi il viaggio</button></div>';
     out += '<div class="btn-row"><a class="btn ghost" href="#/riepilogo">📄 Riepilogo</a><a class="btn ghost" href="#/passato">🗄 Archivio</a></div>';
+    out += '<div class="btn-row"><a class="btn ghost" href="#/nuovo">🚩 Apri un viaggio nuovo</a></div>';
     out += '</div></div>';
 
     out += '<div class="section"><div class="section-title">Dati</div><div class="card stack">';
@@ -1078,7 +1155,7 @@
       var gate = '<div class="section"><div class="card">';
       gate += '<h2 style="margin-top:0">Area sviluppatore</h2>';
       gate += '<p class="muted">Riservata a ' + esc(dev) + ': qui arrivano i suggerimenti mandati dall\'app.</p>';
-      gate += '<div class="field"><label>Codice</label><input type="password" id="devCode" placeholder="••••••" autocapitalize="off" autocorrect="off" spellcheck="false"></div>';
+      gate += '<div class="field"><label>PIN sviluppatore</label><input type="password" inputmode="numeric" id="devCode" placeholder="••••••" autocapitalize="off" autocorrect="off" spellcheck="false"></div>';
       gate += '<button class="btn primary" data-action="dev-unlock">Entra</button>';
       gate += '<div class="btn-row"><a class="btn ghost" href="#/admin">← Torna indietro</a></div>';
       gate += '</div></div>';
@@ -1398,7 +1475,8 @@
     if (!keepPeople) {
       Store.all('travelers').forEach(function (r) { Store.remove('travelers', r.id, true); });
     }
-    Store.setSettings({ currentStageId: null });
+    Store.setSettings({ currentStageId: null, awaitingNewTrip: true });
+    suggestedCode = null;
     Store.save();
     Store.emit();
     return archive;
@@ -1757,12 +1835,26 @@
       scheduleSync();
     },
 
+    'new-trip-create': function () { createNewTrip(false); },
+    'new-trip-share': function () { createNewTrip(true); },
+
+    'new-trip-later': function () {
+      Store.setSettings({ awaitingNewTrip: false });
+      location.hash = '#/';
+    },
+
+    'set-theme': function (el) {
+      Store.setSettings({ theme: el.getAttribute('data-theme') });
+      applyTheme();
+      toast('Tema aggiornato');
+    },
+
     'feedback': function () { sheetFeedback(); },
 
     'dev-unlock': function () {
       var code = document.getElementById('devCode').value.trim();
       var expected = (window.Config && Config.developerCode) || '';
-      if (!expected || code !== expected) { toast('Codice sbagliato'); return; }
+      if (!expected || code !== expected) { toast('PIN sbagliato'); return; }
       Store.setSettings({ devUnlocked: true });
       actions['load-feedback']();
     },
@@ -1840,6 +1932,41 @@
       toast('Tutto azzerato');
     }
   };
+
+  // Crea il viaggio successivo: nuovo codice, nome fresco, e se il gruppo è
+  // vuoto porta dritti alla schermata per aggiungere i viaggiatori.
+  function createNewTrip(alsoShare) {
+    var code = (document.getElementById('newTripCode') || {}).value;
+    var name = (document.getElementById('newTripName') || {}).value;
+    code = (code || '').trim();
+    if (!code) { toast('Serve un codice viaggio'); return; }
+
+    Store.setSupabase({ tripId: code });
+    Store.setTrip({
+      name: (name || '').trim() || 'Bestemmiometro',
+      subtitle: '',
+      startDate: '',
+      endDate: ''
+    });
+    Store.setSettings({ awaitingNewTrip: false, currentStageId: null });
+    suggestedCode = null;
+
+    if (alsoShare) {
+      var link = appUrl() + '#/join?c=' + b64enc({ t: code, n: Store.state.trip.name });
+      shareLink('Entra nel Bestemmiometro del viaggio 🤬\n\n' + link, link);
+    }
+
+    doSync(false);
+
+    if (!travelers().length) {
+      location.hash = '#/admin';
+      toast('Viaggio creato: aggiungi i viaggiatori');
+      setTimeout(function () { sheetTraveler(null); }, 250);
+    } else {
+      location.hash = '#/';
+      toast('Nuovo viaggio: ' + code);
+    }
+  }
 
   function appUrl() {
     return location.origin + location.pathname;
@@ -1956,8 +2083,17 @@
     navigator.serviceWorker.register('sw.js').catch(function () {});
   }
 
-  if (!Store.state.settings.seenWelcome && !location.hash.replace(/^#\/?/, '')) {
+  var noRoute = !location.hash.replace(/^#\/?/, '');
+  if (!Store.state.settings.seenWelcome && noRoute) {
     location.hash = '#/benvenuto';
+  } else if (Store.state.settings.awaitingNewTrip && noRoute) {
+    location.hash = '#/nuovo';
+  }
+
+  applyTheme();
+  if (window.matchMedia) {
+    var scheme = window.matchMedia('(prefers-color-scheme: light)');
+    if (scheme.addEventListener) scheme.addEventListener('change', applyTheme);
   }
 
   render();

@@ -37,6 +37,8 @@
       lastSync: 0,
       lastSyncWarning: '',
       seenWelcome: false,
+      awaitingNewTrip: false,
+      theme: 'dark',
       unlocked: false,
       devUnlocked: false
     }
@@ -242,14 +244,15 @@
     var kinds = Object.keys(groups);
     if (!kinds.length) return Promise.resolve(0);
 
-    var failures = [];
+    var failures = [], lastError = '';
     return Promise.all(kinds.map(function (kind) {
       return postRows(groups[kind])
         .then(function () { markClean(kind, groups[kind]); })
-        .catch(function (err) { failures.push(kind + ' ' + err.message); });
+        .catch(function (err) { failures.push(kind); lastError = err.message; });
     })).then(function () {
-      state.settings.lastSyncWarning = failures.join(' · ');
-      if (failures.length === kinds.length) throw new Error(failures.join(' · '));
+      // Un solo messaggio per tutti i tipi caduti: ripeterlo sei volte non aiuta.
+      state.settings.lastSyncWarning = failures.length ? failures.join(', ') + ' — ' + lastError : '';
+      if (failures.length === kinds.length) throw new Error(state.settings.lastSyncWarning);
       return kinds.length - failures.length;
     });
   }

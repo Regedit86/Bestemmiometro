@@ -38,9 +38,9 @@
     // non vengono mai scaricati dall'app normale, solo dall'area sviluppatore.
     feedbackTrip: '__suggerimenti__',
 
-    // Codice dell'area sviluppatore (in chiaro sarebbe leggibile: cambialo qui
+    // PIN dell'area sviluppatore (in chiaro sarebbe leggibile: cambialo qui
     // se lo condividi per sbaglio). Vale solo per leggere i suggerimenti.
-    developerCode: reveal('ABcWGhFAX1ldWw=='),
+    developerCode: reveal('UFBDTFRc'),
 
     developer: 'Laoretti Brent.gani'
   };
