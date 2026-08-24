@@ -300,6 +300,21 @@
     return merged;
   }
 
+  // Un codice è "libero" se nel database non c'è ancora nessuna riga con quel
+  // trip_id. Senza rete non si può sapere: si risponde unknown, non "libero".
+  function tripExists(code) {
+    if (!code) return Promise.resolve({ exists: false, unknown: false });
+    if (!connected()) return Promise.resolve({ exists: false, unknown: true });
+    var url = endpoint() + '?select=id&limit=1&trip_id=eq.' + encodeURIComponent(code);
+    return fetch(url, { headers: headers() })
+      .then(function (res) {
+        if (!res.ok) throw new Error(String(res.status));
+        return res.json();
+      })
+      .then(function (rows) { return { exists: rows.length > 0, unknown: false }; })
+      .catch(function () { return { exists: false, unknown: true }; });
+  }
+
   var syncing = false;
   function sync() {
     if (!syncConfigured()) return Promise.resolve({ skipped: true });
@@ -373,6 +388,7 @@
     save: save,
     emit: emit,
     sync: sync,
+    tripExists: tripExists,
     pullFeedback: pullFeedback,
     syncConfigured: syncConfigured,
     connected: connected,

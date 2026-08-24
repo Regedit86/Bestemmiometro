@@ -64,6 +64,13 @@ avanzate**. I valori scritti a mano hanno la precedenza e sopravvivono agli aggi
 È la parola d'ordine del gruppo: **chi scrive lo stesso codice vede lo stesso conteggio**.
 Si imposta in **Admin → Gruppo e sincronizzazione** (o alla prima apertura).
 
+Alla prima apertura ci sono due pulsanti e fanno due cose diverse:
+
+- **Entra nel viaggio** — per il codice che ti ha passato un amico: entri al primo tocco
+- **Crea questo codice** — per il codice che stai inventando tu: l'app controlla che non
+  sia già usato da un altro gruppo e, se è libero, ti porta dentro (e se non ci sono
+  ancora viaggiatori apre direttamente la scheda per aggiungerli)
+
 **Admin → Invita gli amici** offre due link:
 
 - **Invita al viaggio** — contiene già il codice: loro toccano *Entra nel gruppo* e sono dentro
@@ -112,9 +119,11 @@ urlate in fila. La **raffica +5** resta esclusa dai bonus, è quantità e non qu
 archivio permanente e il contatore riparte da zero (puoi tenere gli stessi viaggiatori).
 Fallo quando tutti hanno sincronizzato, così nell'archivio finisce tutto.
 
-Alla riapertura successiva l'app parte da una schermata dedicata con due sole strade:
+Subito dopo la conferma si apre la schermata del **prossimo viaggio**, che ricompare
+anche alla riapertura successiva finché non ne crei uno. Due sole strade:
 
-- **Nuovo viaggio** — nome e codice nuovo, con *Crea e invita gli amici* che apre subito
+- **Nuovo viaggio** — il box dove scrivi il codice del prossimo gruppo (se è già usato
+  da altri l'app te lo dice e non procede), con *Crea e invita gli amici* che apre subito
   la condivisione del link. Se chiudendo non hai tenuto nessuno del gruppo precedente,
   subito dopo si apre la scheda per aggiungere il primo viaggiatore.
 - **Area sviluppatore** — il link piccolo in fondo, per leggere i suggerimenti.

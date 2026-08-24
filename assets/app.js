@@ -733,11 +733,12 @@
     out += '<div class="section"><div class="section-title">2. Entra nel viaggio</div><div class="card">';
     out += '<p class="muted" style="margin-top:0;font-size:14px">Il codice viaggio è la parola d\'ordine del gruppo: chi scrive lo stesso codice vede lo stesso conteggio. Fattelo dare da chi organizza, o creane uno nuovo e passalo agli altri.</p>';
     out += '<div class="field"><label>Codice viaggio</label><input type="text" id="welcomeTrip" value="' + esc(s.supabase.tripId) + '" placeholder="es. puglia2026" autocapitalize="off" autocorrect="off" spellcheck="false"></div>';
-    out += '<div class="btn-row"><button class="btn primary" data-action="welcome-join">Entra</button>';
-    out += '<button class="btn ghost" data-action="welcome-new">Crea codice</button></div>';
+    out += '<button class="btn primary" data-action="welcome-join">Entra nel viaggio</button>';
+    out += '<div class="btn-row"><button class="btn ghost" data-action="welcome-create">Crea questo codice</button></div>';
+    out += '<div class="hint" style="margin-top:12px">Te l\'ha passato un amico? Scrivilo e tocca <b>Entra</b>. Stai organizzando tu? Scrivi il codice che vuoi e tocca <b>Crea</b>: ti avviso se è già usato da un altro gruppo.</div>';
     out += '</div></div>';
 
-    out += '<div class="section"><div class="btn-row"><button class="btn ghost" data-action="welcome-done">Ho capito, si comincia →</button></div></div>';
+    out += '<div class="section center"><a class="muted" style="font-size:12px" data-action="welcome-done" href="#/">Non ho ancora un codice, entro dopo</a></div>';
     return out;
   }
 
@@ -785,7 +786,7 @@
     out += '</div></div>';
 
     out += '<div class="section"><div class="section-title">Nuovo viaggio</div><div class="card">';
-    out += '<p class="muted" style="margin-top:0;font-size:14px">Serve un codice nuovo: è la parola d\'ordine del prossimo gruppo. Creane uno e passalo agli amici, chi lo scrive vede lo stesso conteggio.</p>';
+    out += '<p class="muted" style="margin-top:0;font-size:14px">Scrivi qui il codice del prossimo viaggio: è la parola d\'ordine del gruppo, chi lo inserisce vede lo stesso conteggio. Se è già usato da un altro gruppo te lo dico.</p>';
     out += '<div class="field"><label>Nome del viaggio</label><input type="text" id="newTripName" value="" placeholder="Es. Sicilia 2027"></div>';
     out += '<div class="field"><label>Codice viaggio</label><input type="text" id="newTripCode" value="' + esc(suggestCode()) + '" autocapitalize="off" autocorrect="off" spellcheck="false"><div class="hint">Puoi cambiarlo: basta che sia uguale per tutti.</div></div>';
     out += '<button class="btn primary" data-action="new-trip-share">📲 Crea e invita gli amici</button>';
@@ -1323,10 +1324,12 @@
     out += '<div class="field"><label>Soprannome</label><input type="text" id="tvNick" value="' + esc(t ? t.nickname : '') + '" placeholder="Il Navigatore"></div>';
     out += '<div class="field"><label>Ruolo nel viaggio</label><input type="text" id="tvRole" value="' + esc(t ? t.role : '') + '" placeholder="Autista ufficiale"></div>';
     out += '<div class="field"><label>Descrizione</label><textarea id="tvBio" placeholder="Due parole sul personaggio">' + esc(t ? t.bio : '') + '</textarea></div>';
-    out += '<div class="field"><label>Colore</label><div class="chips" id="colorPicker">';
+    // Per un viaggiatore nuovo un colore è già scelto: così il selettore non
+    // parte muto e nessuno resta senza colore.
+    var currentColor = (t && t.color) || COLORS[Store.all('travelers').length % COLORS.length];
+    out += '<div class="field"><label>Colore</label><div class="colors" id="colorPicker">';
     COLORS.forEach(function (c) {
-      var active = t && t.color === c;
-      out += '<button type="button" class="chip' + (active ? ' active' : '') + '" data-color="' + c + '" style="background:' + c + ';border-color:' + c + ';width:44px">&nbsp;</button>';
+      out += '<button type="button" class="' + (c === currentColor ? 'active' : '') + '" data-color="' + c + '" style="--c:' + c + '" aria-label="colore ' + c + '"><span>✓</span></button>';
     });
     out += '</div></div>';
     out += '<button class="btn primary" data-action="save-traveler" data-id="' + esc(id || '') + '">Salva</button>';
@@ -1750,23 +1753,20 @@
       if (cfg.k) patch.key = cfg.k;
       Store.setSupabase(patch);
       if (cfg.n) Store.setTrip({ name: cfg.n });
-      doSync(true).then(function () {
-        location.hash = Store.state.settings.seenWelcome ? '#/' : '#/benvenuto';
-      });
+      enterTrip(cfg.t, false);
     },
 
     'welcome-join': function () {
       var code = document.getElementById('welcomeTrip').value.trim();
       if (!code) { toast('Scrivi il codice viaggio'); return; }
-      Store.setSupabase({ tripId: code });
-      doSync(true);
+      enterTrip(code, false);
     },
 
-    'welcome-new': function () {
-      var code = 'viaggio-' + Math.random().toString(36).slice(2, 7);
-      document.getElementById('welcomeTrip').value = code;
-      Store.setSupabase({ tripId: code });
-      toast('Codice creato: passalo agli amici');
+    'welcome-create': function () {
+      var el = document.getElementById('welcomeTrip');
+      var code = (el.value || '').trim() || suggestCode();
+      el.value = code;
+      claimCode(code, function () { enterTrip(code, true); });
     },
 
     'welcome-done': function () {
@@ -1809,11 +1809,11 @@
       var sub = document.getElementById('closeSub').value.trim();
       var keep = document.getElementById('keepPeople').checked;
       if (!confirm('Chiudere il viaggio e azzerare il contatore? L\'archivio resta consultabile.')) return;
-      var archive = closeTrip(name, sub, keep);
+      closeTrip(name, sub, keep);
       closeSheet();
-      toast('Viaggio archiviato 🏁');
+      toast('Archiviato 🏁 Ora scegli il codice del prossimo viaggio');
       scheduleSync();
-      location.hash = '#/passato/' + archive.id;
+      location.hash = '#/nuovo';
     },
 
     'restore-archive': function (el) {
@@ -1933,6 +1933,40 @@
     }
   };
 
+  // Entrare significa entrare: si imposta il codice, si sincronizza e si va
+  // dentro, senza altri passaggi da confermare.
+  function enterTrip(code, isNew) {
+    Store.setSupabase({ tripId: code });
+    Store.setSettings({ seenWelcome: true, awaitingNewTrip: false });
+    suggestedCode = null;
+    doSync(false).then(function () {
+      if (isNew && !travelers().length) {
+        location.hash = '#/admin';
+        toast('Viaggio “' + code + '” creato: aggiungi i viaggiatori');
+        setTimeout(function () { sheetTraveler(null); }, 250);
+        return;
+      }
+      location.hash = '#/';
+      if (isNew) toast('Viaggio “' + code + '” creato');
+      else if (travelers().length) toast('Sei dentro: ' + travelers().length + ' viaggiatori');
+      else toast('Sei dentro “' + code + '”, ma è ancora vuoto');
+    });
+  }
+
+  // Un codice nuovo non deve pestare i piedi a un gruppo che esiste già.
+  function claimCode(code, onFree) {
+    if (!code) { toast('Scrivi un codice viaggio'); return; }
+    toast('Controllo il codice…');
+    Store.tripExists(code).then(function (res) {
+      if (res.exists) {
+        toast('“' + code + '” esiste già: scegline un altro');
+        return;
+      }
+      if (res.unknown) toast('Senza rete non posso verificarlo: procedo');
+      onFree();
+    });
+  }
+
   // Crea il viaggio successivo: nuovo codice, nome fresco, e se il gruppo è
   // vuoto porta dritti alla schermata per aggiungere i viaggiatori.
   function createNewTrip(alsoShare) {
@@ -1940,7 +1974,10 @@
     var name = (document.getElementById('newTripName') || {}).value;
     code = (code || '').trim();
     if (!code) { toast('Serve un codice viaggio'); return; }
+    claimCode(code, function () { applyNewTrip(code, name, alsoShare); });
+  }
 
+  function applyNewTrip(code, name, alsoShare) {
     Store.setSupabase({ tripId: code });
     Store.setTrip({
       name: (name || '').trim() || 'Bestemmiometro',
@@ -1948,7 +1985,7 @@
       startDate: '',
       endDate: ''
     });
-    Store.setSettings({ awaitingNewTrip: false, currentStageId: null });
+    Store.setSettings({ awaitingNewTrip: false, currentStageId: null, seenWelcome: true });
     suggestedCode = null;
 
     if (alsoShare) {

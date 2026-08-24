@@ -386,6 +386,31 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .severity button.active { border-color: var(--accent); background: rgba(255,77,61,.12); }
 .severity button.active .lb { color: var(--text); }
 
+/* ---------- Selettore colore ----------
+   Le pastiglie sono già colorate, quindi la selezione non può essere un altro
+   colore: si segna con un anello attorno e un segno di spunta dentro. */
+.colors { display: flex; flex-wrap: wrap; gap: 12px; }
+.colors button {
+  width: 42px; height: 42px; padding: 0;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  background: var(--c);
+  display: grid; place-items: center;
+  cursor: pointer;
+  transition: transform .12s ease;
+}
+.colors button span {
+  color: #fff; font-size: 19px; font-weight: 800;
+  opacity: 0;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, .55);
+}
+.colors button.active {
+  border-color: var(--text);
+  box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--text);
+  transform: scale(1.05);
+}
+.colors button.active span { opacity: 1; }
+
 /* ---------- Selettore tipo bestemmia ---------- */
 .types { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .types button {
