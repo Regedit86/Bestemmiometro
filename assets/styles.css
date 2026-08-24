@@ -1,5 +1,7 @@
-/* Bestemmiometro — stile mobile-first */
-:root {
+/* Bestemmiometro — stile mobile-first.
+   Il tema si sceglie in Admin: scuro (predefinito), chiaro o automatico.
+   Ogni colore passa da una variabile, così il cambio è immediato. */
+:root, :root[data-theme="dark"] {
   --bg: #0d0f14;
   --bg-elev: #151923;
   --bg-elev-2: #1d2230;
@@ -9,8 +11,65 @@
   --accent: #ff4d3d;
   --accent-2: #ffb020;
   --good: #35d07f;
+  --bar-bg: rgba(13, 15, 20, 0.86);
+  --hero-from: #2a1116;
+  --hero-line: #3a1f26;
+  --danger-line: #5b2028;
+  --danger-text: #ff7d70;
+  --gold: #ffd24a;
+  --silver: #cfd6e4;
+  --bronze: #d99257;
+  --shadow: rgba(0, 0, 0, .4);
   --radius: 16px;
   --tabbar-h: 62px;
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  --bg: #f4f6fa;
+  --bg-elev: #ffffff;
+  --bg-elev-2: #eaeef5;
+  --line: #d8dee9;
+  --text: #131720;
+  --muted: #5d6779;
+  --accent: #d92d1c;
+  --accent-2: #a86a00;
+  --good: #16884f;
+  --bar-bg: rgba(244, 246, 250, 0.88);
+  --hero-from: #ffe3df;
+  --hero-line: #f3c7c1;
+  --danger-line: #e8b6b0;
+  --danger-text: #c0281a;
+  --gold: #b4870b;
+  --silver: #6e7789;
+  --bronze: #a2652f;
+  --shadow: rgba(19, 23, 32, .14);
+  color-scheme: light;
+}
+
+/* "Automatico" segue l'impostazione di iOS */
+@media (prefers-color-scheme: light) {
+  :root[data-theme="auto"] {
+    --bg: #f4f6fa;
+    --bg-elev: #ffffff;
+    --bg-elev-2: #eaeef5;
+    --line: #d8dee9;
+    --text: #131720;
+    --muted: #5d6779;
+    --accent: #d92d1c;
+    --accent-2: #a86a00;
+    --good: #16884f;
+    --bar-bg: rgba(244, 246, 250, 0.88);
+    --hero-from: #ffe3df;
+    --hero-line: #f3c7c1;
+    --danger-line: #e8b6b0;
+    --danger-text: #c0281a;
+    --gold: #b4870b;
+    --silver: #6e7789;
+    --bronze: #a2652f;
+    --shadow: rgba(19, 23, 32, .14);
+    color-scheme: light;
+  }
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -39,7 +98,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
   position: sticky;
   top: 0;
   z-index: 20;
-  background: rgba(13, 15, 20, 0.86);
+  background: var(--bar-bg);
   backdrop-filter: saturate(160%) blur(14px);
   -webkit-backdrop-filter: saturate(160%) blur(14px);
   border-bottom: 1px solid var(--line);
@@ -101,8 +160,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
 
 /* ---------- Hero contatore ---------- */
 .hero {
-  background: linear-gradient(150deg, #2a1116, var(--bg-elev) 62%);
-  border: 1px solid #3a1f26;
+  background: linear-gradient(150deg, var(--hero-from), var(--bg-elev) 62%);
+  border: 1px solid var(--hero-line);
   border-radius: 20px;
   padding: 18px;
   text-align: center;
@@ -162,7 +221,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .btn:active { transform: scale(.985); }
 .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
 .btn.ghost { background: transparent; }
-.btn.danger { background: transparent; border-color: #5b2028; color: #ff7d70; }
+.btn.danger { background: transparent; border-color: var(--danger-line); color: var(--danger-text); }
 .btn.small { padding: 8px 12px; font-size: 13px; width: auto; }
 .btn-row { display: flex; gap: 10px; margin-top: 12px; }
 .btn-row .btn { width: 100%; }
@@ -200,6 +259,26 @@ button, input, select, textarea { font: inherit; color: inherit; }
 }
 .field textarea { min-height: 84px; resize: vertical; }
 .field input:focus, .field textarea:focus, .field select:focus { border-color: var(--accent); }
+
+/* Su iOS i campi data e ora hanno una larghezza intrinseca che sborda dal
+   riquadro: vanno normalizzati e resi comprimibili. */
+.field input[type="date"],
+.field input[type="time"],
+.field select {
+  -webkit-appearance: none;
+  appearance: none;
+  min-width: 0;
+  max-width: 100%;
+  height: 46px;
+}
+.field input[type="date"]::-webkit-date-and-time-value,
+.field input[type="time"]::-webkit-date-and-time-value {
+  text-align: left;
+  margin: 0;
+}
+.field input[type="date"]::-webkit-calendar-picker-indicator,
+.field input[type="time"]::-webkit-calendar-picker-indicator { margin-left: auto; }
+.row-2 > *, .field > * { min-width: 0; }
 .field .hint { color: var(--muted); font-size: 12px; margin-top: 6px; }
 .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
@@ -236,7 +315,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
   font-weight: 800; font-size: 15px; color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
-.rank.gold { color: #ffd24a; } .rank.silver { color: #cfd6e4; } .rank.bronze { color: #d99257; }
+.rank.gold { color: var(--gold); } .rank.silver { color: var(--silver); } .rank.bronze { color: var(--bronze); }
 
 .bar { height: 6px; border-radius: 999px; background: var(--bg-elev-2); margin-top: 6px; overflow: hidden; }
 .bar > i { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
@@ -264,7 +343,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .tabbar {
   position: fixed; bottom: 0; left: 0; right: 0; z-index: 30;
   display: grid; grid-template-columns: repeat(5, 1fr);
-  background: rgba(13, 15, 20, 0.94);
+  background: var(--bar-bg);
   backdrop-filter: saturate(160%) blur(14px);
   -webkit-backdrop-filter: saturate(160%) blur(14px);
   border-top: 1px solid var(--line);
@@ -307,6 +386,31 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .severity button.active { border-color: var(--accent); background: rgba(255,77,61,.12); }
 .severity button.active .lb { color: var(--text); }
 
+/* ---------- Selettore colore ----------
+   Le pastiglie sono già colorate, quindi la selezione non può essere un altro
+   colore: si segna con un anello attorno e un segno di spunta dentro. */
+.colors { display: flex; flex-wrap: wrap; gap: 12px; }
+.colors button {
+  width: 42px; height: 42px; padding: 0;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  background: var(--c);
+  display: grid; place-items: center;
+  cursor: pointer;
+  transition: transform .12s ease;
+}
+.colors button span {
+  color: #fff; font-size: 19px; font-weight: 800;
+  opacity: 0;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, .55);
+}
+.colors button.active {
+  border-color: var(--text);
+  box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--text);
+  transform: scale(1.05);
+}
+.colors button.active span { opacity: 1; }
+
 /* ---------- Selettore tipo bestemmia ---------- */
 .types { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .types button {
@@ -326,7 +430,53 @@ button, input, select, textarea { font: inherit; color: inherit; }
   background: var(--bg-elev-2); border: 1px solid var(--line);
   padding: 11px 16px; border-radius: 999px;
   font-size: 14px; z-index: 60; max-width: 88vw; text-align: center;
-  box-shadow: 0 10px 30px rgba(0,0,0,.4);
+  box-shadow: 0 10px 30px var(--shadow);
+}
+
+/* ---------- Istruzioni numerate ---------- */
+.steps { margin: 0; padding-left: 20px; }
+.steps li { margin-bottom: 10px; font-size: 14px; line-height: 1.5; }
+.steps li b { color: var(--text); }
+
+details summary { cursor: pointer; padding: 6px 0; }
+details summary::-webkit-details-marker { color: var(--muted); }
+
+/* ---------- Riepilogo stampabile ---------- */
+.paper {
+  background: var(--bg-elev);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 22px 18px;
+}
+.paper-head { text-align: center; border-bottom: 1px solid var(--line); padding-bottom: 16px; margin-bottom: 18px; }
+.paper-kicker { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); font-weight: 800; }
+.paper h1 { font-size: 26px; margin: 8px 0 4px; }
+.paper-sub { color: var(--muted); font-size: 13px; }
+.paper-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 22px; }
+.paper-stat { background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 12px 6px; text-align: center; }
+.paper-stat b { display: block; font-size: 22px; font-variant-numeric: tabular-nums; }
+.paper-stat span { font-size: 10px; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); }
+.paper-h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--muted); margin: 22px 0 10px; }
+.paper-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.paper-table th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); padding: 6px 4px; border-bottom: 1px solid var(--line); }
+.paper-table td { padding: 8px 4px; border-bottom: 1px solid var(--line); }
+.paper-table td:first-child, .paper-table th:first-child { width: 28px; color: var(--muted); }
+.paper-list { margin: 0; padding-left: 18px; font-size: 14px; }
+.paper-list li { margin-bottom: 12px; line-height: 1.45; }
+.paper-foot { margin-top: 24px; padding-top: 14px; border-top: 1px solid var(--line); text-align: center; color: var(--muted); font-size: 11px; }
+
+@media print {
+  .topbar, .tabbar, .no-print, .sheet, .toast { display: none !important; }
+  body { background: #fff; color: #111; padding: 0; }
+  .view { padding: 0; max-width: none; }
+  .paper { background: #fff; border: 0; border-radius: 0; padding: 0; color: #111; }
+  .paper-stat { background: #f4f4f6; border-color: #ddd; }
+  .paper-kicker { color: #c0392b; }
+  .paper-sub, .paper-h2, .paper-foot, .paper-table th, .muted { color: #666 !important; }
+  .paper-stat b, .paper h1, .paper-table td { color: #111; }
+  .paper-table th, .paper-table td, .paper-head, .paper-foot { border-color: #ddd; }
+  .paper-h2 { page-break-after: avoid; }
+  .paper-list li, .paper-table tr { page-break-inside: avoid; }
 }
 
 .photo-picker { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }

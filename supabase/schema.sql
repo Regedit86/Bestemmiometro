@@ -4,7 +4,7 @@
 create table if not exists public.bm_records (
   id          text primary key,
   trip_id     text        not null,
-  kind        text        not null check (kind in ('travelers', 'stages', 'curses', 'quotes')),
+  kind        text        not null check (kind in ('travelers', 'stages', 'curses', 'quotes', 'archives', 'feedback')),
   data        jsonb       not null default '{}'::jsonb,
   updated_at  bigint      not null default 0,
   deleted     boolean     not null default false,
