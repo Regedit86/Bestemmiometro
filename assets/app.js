@@ -302,6 +302,21 @@
 
   /* ---------------- vista: Oggi ---------------- */
 
+  // Dopo la chiusura di un viaggio il richiamo resta in home finché il codice
+  // nuovo non c'è: chi chiude per sbaglio la schermata deve ritrovarlo subito.
+  function newTripCard() {
+    if (!Store.state.settings.awaitingNewTrip) return '';
+    var last = archives()[0];
+    var out = '<div class="section"><div class="card">';
+    out += '<div class="section-title" style="margin-bottom:8px">🏁 Il viaggio è finito</div>';
+    out += '<p class="muted" style="margin-top:0;font-size:14px">';
+    if (last) out += '“' + esc(last.name) + '” è al sicuro nell\'archivio. ';
+    out += 'Per ricominciare serve il codice del prossimo viaggio, quello da passare agli amici.</p>';
+    out += '<div class="btn-row"><a class="btn primary" href="#/nuovo">🚩 Crea il nuovo codice viaggio</a></div>';
+    out += '</div></div>';
+    return out;
+  }
+
   function viewHome() {
     var people = travelers();
     if (!people.length) return onboarding();
@@ -312,7 +327,7 @@
     var total = Store.all('curses').length;
     var counts = countsBy(today);
 
-    var out = '';
+    var out = newTripCard();
 
     out += '<div class="section">';
     out += '<div class="hero">';
@@ -420,7 +435,8 @@
   }
 
   function onboarding() {
-    var out = '<div class="section"><div class="card center">';
+    var out = newTripCard();
+    out += '<div class="section"><div class="card center">';
     out += '<div style="font-size:46px">🤬</div>';
     out += '<h2 style="margin:6px 0 4px">Benvenuto nel Bestemmiometro</h2>';
     out += '<p class="muted" style="margin-top:0">Prima di partire aggiungi i viaggiatori e le tappe del roadtrip. Poi basterà toccare una faccia per registrare il misfatto.</p>';
@@ -800,7 +816,7 @@
 
     out += '<div class="section center">';
     out += '<a class="muted" style="font-size:12px" href="#/sviluppatore">Area sviluppatore — riservata a ' + esc(dev) + '</a>';
-    out += '<div style="margin-top:14px"><a class="muted" style="font-size:12px" data-action="new-trip-later" href="#/">Più tardi</a></div>';
+    out += '<div style="margin-top:14px"><a class="muted" style="font-size:12px" data-action="new-trip-later" href="#/">Più tardi — lo trovi in home</a></div>';
     out += '</div>';
     return out;
   }
@@ -1478,7 +1494,7 @@
     if (!keepPeople) {
       Store.all('travelers').forEach(function (r) { Store.remove('travelers', r.id, true); });
     }
-    Store.setSettings({ currentStageId: null, awaitingNewTrip: true });
+    Store.setSettings({ currentStageId: null, awaitingNewTrip: true, newTripDismissed: false });
     suggestedCode = null;
     Store.save();
     Store.emit();
@@ -1839,7 +1855,8 @@
     'new-trip-share': function () { createNewTrip(true); },
 
     'new-trip-later': function () {
-      Store.setSettings({ awaitingNewTrip: false });
+      // Il richiamo resta in home: qui si spegne solo l'apertura automatica.
+      Store.setSettings({ newTripDismissed: true });
       location.hash = '#/';
     },
 
@@ -1937,7 +1954,7 @@
   // dentro, senza altri passaggi da confermare.
   function enterTrip(code, isNew) {
     Store.setSupabase({ tripId: code });
-    Store.setSettings({ seenWelcome: true, awaitingNewTrip: false });
+    Store.setSettings({ seenWelcome: true, awaitingNewTrip: false, newTripDismissed: false });
     suggestedCode = null;
     doSync(false).then(function () {
       if (isNew && !travelers().length) {
@@ -1985,7 +2002,7 @@
       startDate: '',
       endDate: ''
     });
-    Store.setSettings({ awaitingNewTrip: false, currentStageId: null, seenWelcome: true });
+    Store.setSettings({ awaitingNewTrip: false, newTripDismissed: false, currentStageId: null, seenWelcome: true });
     suggestedCode = null;
 
     if (alsoShare) {
@@ -2123,7 +2140,7 @@
   var noRoute = !location.hash.replace(/^#\/?/, '');
   if (!Store.state.settings.seenWelcome && noRoute) {
     location.hash = '#/benvenuto';
-  } else if (Store.state.settings.awaitingNewTrip && noRoute) {
+  } else if (Store.state.settings.awaitingNewTrip && !Store.state.settings.newTripDismissed && noRoute) {
     location.hash = '#/nuovo';
   }
 

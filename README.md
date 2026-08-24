@@ -128,7 +128,10 @@ anche alla riapertura successiva finché non ne crei uno. Due sole strade:
   subito dopo si apre la scheda per aggiungere il primo viaggiatore.
 - **Area sviluppatore** — il link piccolo in fondo, per leggere i suggerimenti.
 
-(*Più tardi* la fa sparire; si ritrova con **Admin → Fine vacanza → Apri un viaggio nuovo**.)
+Se esci da quella schermata — per sbaglio o con *Più tardi* — non perdi niente: finché
+non crei il codice nuovo, in cima alla **home** resta il riquadro **🏁 Il viaggio è finito**
+con il pulsante per crearlo. (Si trova anche in **Admin → Fine vacanza → Apri un viaggio
+nuovo**.) *Più tardi* spegne solo l'apertura automatica, non il riquadro.
 
 Da lì, e da **Le bestemmie del passato**, puoi:
 

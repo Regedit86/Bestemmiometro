@@ -38,6 +38,7 @@
       lastSyncWarning: '',
       seenWelcome: false,
       awaitingNewTrip: false,
+      newTripDismissed: false,
       theme: 'dark',
       unlocked: false,
       devUnlocked: false
